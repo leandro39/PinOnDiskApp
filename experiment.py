@@ -1,15 +1,17 @@
-from math import pi
-import serial
+import csv
+import queue
 import sys
 import time
-import csv
-from threading import Thread, Event, Lock
+from math import pi
+from threading import Event, Lock, Thread
+import serial
+
 
 class Experimento:
     def __init__(self, dist, radio, carga, puertoCelda, puertoArduino):
         self._distancia = dist
         self._radio = radio
-        self._vueltasTarget = int(dist/(2*pi*radio))
+        self._vueltasTarget = int((dist*1000)/(2*pi*radio))
         self._cargaExperimento = carga
         self._puertoCelda = puertoCelda
         self._puertoArduino = puertoArduino
@@ -36,10 +38,11 @@ class Experimento:
         
     def empezar(self):
         try:
-            self._serialCelda.baudrate = 9600
-            self._serialCelda.port = self._puertoCelda
-            self._serialCelda.timeout = None
-            self._serialCelda.open()
+            if not (self._serialCelda.is_open):
+                self._serialCelda.baudrate = 9600
+                self._serialCelda.port = self._puertoCelda
+                self._serialCelda.timeout = 1.0
+                self._serialCelda.open()
 
             if not (self._serialCelda.is_open):
                 raise Exception('Error en puerto serial de celda de arga')
@@ -52,8 +55,9 @@ class Experimento:
             self._distQ = queue.Queue()
             self._dataEvent = Event()
             self._dataReady = Event()
+            self._lock = Lock()
 
-            self._serialArduino.write(b'<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget = self._vueltasTarget))
+            self._serialArduino.write((f'<STAR,{self._radio},{self._vueltasTarget}>').encode())
             
             if not (self._serialArduino.readline().decode('ascii').strip() == "0"):
                 raise Exception('Error en comunicacion con controlador')
@@ -75,40 +79,52 @@ class Experimento:
             print(e.args)
             print(e)
 
+
     def pausar(self):
         pass
 
     def detener(self):
+        t5 = Thread(target=self._detener)
+        t5.start()
+
+        def conectar(self):
+        t4 = Thread(target=self._conectar)
+        t4.start()
+
+    def _detener(self):
         if (self.isRunning):
             try:
+                self._lock.acquire()
                 self._serialArduino.write(b'<STOP>')
                 if (self._serialArduino.readline().decode('ascii').strip() == "1"):
+                    self._lock.release()
                     self._stopThreads = True
                     self.isRunning = False
-
-
 
             except Exception as e:
                 print(type (e))
                 print(e.args)
                 print(e)
-
-    def conectar(self):
+     
+    def _conectar(self):
         try:
-            self._serialArduino.baudrate = 9600 
-            self._serialArduino.port = self._puertoArduino
-            self._serialArduino.timeout = timeout = None
-            self._serialArduino.open()
+            if not (self._serialArduino.is_open):
+                self._serialArduino.baudrate = 9600 
+                self._serialArduino.port = self._puertoArduino
+                self._serialArduino.timeout = 1.0
+                self._serialArduino.open()
+                time.sleep(2)
+                if (self._serialArduino.is_open): 
+                    self._serialArduino.write(b'<CONN>\n')
+                    read = self._serialArduino.readline().decode('ascii').strip()
 
-            if (self._serialArduino.is_open): 
-                self._serialArduino.write(b'<CONN>\n')
-                read = self._serialArduino.readline().decode('ascii').strip()
-
-                if (read == '0'):
-                    self.isConnected = True
-                    return True
-                else:
-                    return False
+                    if (read == '0'):
+                        self.isConnected = True
+                        return True
+                    else:
+                        return False
+            else:
+                return True
 
         except Exception as e:
             print(type(e))
@@ -117,8 +133,11 @@ class Experimento:
 
     def desconectar(self):
         try:
-            self._serialArduino.write(b'<DCON>\n')
-            self._serialArduino.close()
+            if (not self.isRunning and self.isConnected):
+                self._serialArduino.write(b'<DCON>\n')
+                if (self._serialArduino.readline().decode('ascii').strip() == '0'):    
+                    self._serialArduino.close()
+
         except Exception as e:
             print("Exception occurred " + e.args[0])    
         
@@ -128,7 +147,7 @@ class Experimento:
                 break
             celda = self._serialCelda.readline()
             if not (celda == b""):
-                celda = celda.decode('ascii').strip()[8:13]  #Parse poco prolijo para test
+                celda = celda.decode('ascii').strip()[4:9]  #Parse poco prolijo para test
                 self._celdaQ.put(celda)  
                 self._dataEvent.set()
             
@@ -139,16 +158,19 @@ class Experimento:
                 break
             self._dataEvent.wait(1.5)
             if (self._dataEvent.isSet() and not self._celdaQ.empty()):
+                self._lock.acquire()
                 self._serialArduino.write(b'<SEND>\n')
                 answer = self._serialArduino.readline().decode('ascii').strip()
+                self._lock.release()
                 if (answer == "-1"):
                     self._stopThreads = True
-                    dataEvent.clear()
+                    self._dataEvent.clear()
+                    self.isRunning = False
                     print("Experimento terminado")
                     break
                 else:
                     vueltas = float(answer)
-                    self._distQ.put(vueltas*2*pi*self._radio)
+                    self._distQ.put("{:10.2f}".format(vueltas*2*pi*self._radio).strip())
                     self._dataEvent.clear()
                     self._dataReady.set()
                               
@@ -159,7 +181,6 @@ class Experimento:
                 break     
             self._dataReady.wait(1.5)
             if (self._dataReady.isSet() and not (self._celdaQ.empty() and self._distQ.empty())):
-                t1 = time.time()
                 timestamp = time.time()-self._t0
                 self._dataReady.clear()
                 self.data.append((self._celdaQ.get(),self._distQ.get(),timestamp))
@@ -173,6 +194,3 @@ class Experimento:
             csv_out.writerow(['carga','distancia', 'tiempo'])
             for row in self.data:
                 csv_out.writerow(row)
-
-
-        
