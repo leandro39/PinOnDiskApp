@@ -6,7 +6,7 @@ import time
 import csv
 
 data = []
-with open('celda_sim.csv') as out:
+with open('..\\data\\celda_sim.csv') as out:
     csv_reader = csv.reader(out)
     data = list(csv_reader)
 

@@ -7,17 +7,16 @@ from threading import Event, Lock, Thread
 import serial
 
 
-class Experimento:
-    def __init__(self, dist, radio, carga, puertoCelda, puertoArduino):
+class Ensayo:
+    def __init__(self, name, dist, radio, carga, puertoCelda, serialArduino):
+        self._name = name
         self._distancia = dist
         self._radio = radio
         self._vueltasTarget = int((dist*1000)/(2*pi*radio))
         self._cargaExperimento = carga
         self._puertoCelda = puertoCelda
-        self._puertoArduino = puertoArduino
-        self._serialArduino = serial.Serial()
+        self._serialArduino = serialArduino
         self._serialCelda = serial.Serial()
-        self.isConnected = False
         self.isRunning = False
         self._stopThreads = False
         
@@ -32,9 +31,6 @@ class Experimento:
 
     def getVueltasTarget(self):
         return self._vueltasTarget
-
-    def getPuerto(self):
-        return (self._puertoCelda, self._puertoArduino)
         
     def empezar(self):
         try:
@@ -46,8 +42,6 @@ class Experimento:
 
             if not (self._serialCelda.is_open):
                 raise Exception('Error en puerto serial de celda de arga')
-            if not (self.isConnected):
-                raise Exception('Error en puerto serial de controlador')
 
             #Init variables de experimento
             self.data = []
@@ -73,73 +67,17 @@ class Experimento:
             t2.start()
             t3.start()
 
-        
         except Exception as e:
             print(type (e))
             print(e.args)
             print(e)
-
 
     def pausar(self):
         pass
 
     def detener(self):
         t5 = Thread(target=self._detener)
-        t5.start()
-
-        def conectar(self):
-        t4 = Thread(target=self._conectar)
-        t4.start()
-
-    def _detener(self):
-        if (self.isRunning):
-            try:
-                self._lock.acquire()
-                self._serialArduino.write(b'<STOP>')
-                if (self._serialArduino.readline().decode('ascii').strip() == "1"):
-                    self._lock.release()
-                    self._stopThreads = True
-                    self.isRunning = False
-
-            except Exception as e:
-                print(type (e))
-                print(e.args)
-                print(e)
-     
-    def _conectar(self):
-        try:
-            if not (self._serialArduino.is_open):
-                self._serialArduino.baudrate = 9600 
-                self._serialArduino.port = self._puertoArduino
-                self._serialArduino.timeout = 1.0
-                self._serialArduino.open()
-                time.sleep(2)
-                if (self._serialArduino.is_open): 
-                    self._serialArduino.write(b'<CONN>\n')
-                    read = self._serialArduino.readline().decode('ascii').strip()
-
-                    if (read == '0'):
-                        self.isConnected = True
-                        return True
-                    else:
-                        return False
-            else:
-                return True
-
-        except Exception as e:
-            print(type(e))
-            print(e.args)
-            print(e)
-
-    def desconectar(self):
-        try:
-            if (not self.isRunning and self.isConnected):
-                self._serialArduino.write(b'<DCON>\n')
-                if (self._serialArduino.readline().decode('ascii').strip() == '0'):    
-                    self._serialArduino.close()
-
-        except Exception as e:
-            print("Exception occurred " + e.args[0])    
+        t5.start() 
         
     def __celdaListener(self):
         while True:
@@ -151,7 +89,6 @@ class Experimento:
                 self._celdaQ.put(celda)  
                 self._dataEvent.set()
             
-
     def __controllerListener(self):
         while True:
             if self._stopThreads:
@@ -174,7 +111,6 @@ class Experimento:
                     self._dataEvent.clear()
                     self._dataReady.set()
                               
-    
     def __dataWriter(self):
         while True:
             if self._stopThreads:   
@@ -189,8 +125,17 @@ class Experimento:
             self.__storeData() 
 
     def __storeData(self):
-        with open(self._path, 'w') as out:
+        with open(self._path + '\\' + self._name + '.csv', 'w') as out:
             csv_out = csv.writer(out)
+            #Write metada
+            csv_out.writerow([f'#Nombre del experimento: {self.name}'])
+            today = time.strftime('%d/%m/%y - %H:%M:%S', time.gmtime(t0))
+            csv_out.writerow([f'#Fecha del experimento: {today}'])
+
+            #Write data 
             csv_out.writerow(['carga','distancia', 'tiempo'])
             for row in self.data:
                 csv_out.writerow(row)
+
+    
+

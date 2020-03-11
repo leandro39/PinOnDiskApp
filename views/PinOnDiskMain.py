@@ -1,21 +1,4 @@
-# -*- coding: utf-8 -*-
-
-# Form implementation generated from reading ui file 'PinOnDiskApp.ui'
-#
-# Created by: PyQt5 UI code generator 5.13.2
-#
-# WARNING! All changes made in this file will be lost!
-
-
 from PyQt5 import QtCore, QtGui, QtWidgets
-import serial.tools.list_ports
-
-def loadSerialPorts():
-    comlist = [port.device for port in serial.tools.list_ports.comports()]
-    for port in comlist:
-        ui.portCombo.addItem(port)
-
-
 
 
 class Ui_MainWindow(object):
@@ -38,24 +21,39 @@ class Ui_MainWindow(object):
         self.gridLayout.setObjectName("gridLayout")
         self.portCombo = QtWidgets.QComboBox(self.horizontalLayoutWidget_3)
         self.portCombo.setObjectName("portCombo")
-        self.gridLayout.addWidget(self.portCombo, 1, 0, 1, 1)
-        self.connectedCheck = QtWidgets.QCheckBox(self.horizontalLayoutWidget_3)
-        self.connectedCheck.setEnabled(True)
-        self.connectedCheck.setCheckable(False)
-        self.connectedCheck.setObjectName("connectedCheck")
-        self.gridLayout.addWidget(self.connectedCheck, 1, 2, 1, 1)
+        self.gridLayout.addWidget(self.portCombo, 1, 0, 1, 4)
+        
+        self.labelNotConnected = QtWidgets.QLabel(self.horizontalLayoutWidget_3)
+        self.labelNotConnected.setMaximumHeight(26)
+        self.labelNotConnected.setMaximumWidth(26)
+        self.labelNotConnected.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.labelNotConnected.setText = ""
+        self.labelNotConnected.setScaledContents(True)
+        self.labelNotConnected.setObjectName("labelNotConnected")
+        self.gridLayout.addWidget(self.labelNotConnected, 1, 12, 1, 4)
+
+        self.labelConnected = QtWidgets.QLabel(self.horizontalLayoutWidget_3)
+        self.labelConnected.setMaximumHeight(26)
+        self.labelConnected.setMaximumWidth(26)
+        self.labelConnected.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.labelConnected.setText = ""
+        self.labelConnected.setScaledContents(True)
+        self.labelConnected.setObjectName("labelConnected")
+        self.gridLayout.addWidget(self.labelConnected, 1, 12, 1, 4)
+        self.labelConnected.hide()
+
         self.label_3 = QtWidgets.QLabel(self.horizontalLayoutWidget_3)
         self.label_3.setObjectName("label_3")
         self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
         self.conectarBtn = QtWidgets.QPushButton(self.horizontalLayoutWidget_3)
         self.conectarBtn.setObjectName("conectarBtn")
-        self.gridLayout.addWidget(self.conectarBtn, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.conectarBtn, 1, 5, 1, 4)
         self.gridLayout.setColumnStretch(0, 3)
         self.gridLayout.setColumnStretch(1, 2)
         self.gridLayout.setColumnStretch(2, 1)
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox.setEnabled(False)
-        self.groupBox.setGeometry(QtCore.QRect(8, 88, 493, 285))
+        self.groupBox.setGeometry(QtCore.QRect(8, 88, 493, 325))
         self.groupBox.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.groupBox.setAutoFillBackground(True)
         self.groupBox.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
@@ -63,7 +61,7 @@ class Ui_MainWindow(object):
         self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.groupBox)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(8, 24, 481, 249))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(8, 24, 481, 285))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -114,8 +112,22 @@ class Ui_MainWindow(object):
         self.label_7.setObjectName("label_7")
         self.horizontalLayout_3.addWidget(self.label_7)
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+        self.label_8 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.label_8.setObjectName("label_8")
+        self.verticalLayout_3.addWidget(self.label_8)
+        self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.cargaInput = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
+        self.cargaInput.setObjectName("cargaInput")
+        self.horizontalLayout_5.addWidget(self.cargaInput)
+        self.label_9 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.label_9.setObjectName("label_9")
+        self.horizontalLayout_5.addWidget(self.label_9)
+        self.horizontalLayout_5.setStretch(0, 1)
+        self.horizontalLayout_5.setStretch(1, 1)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
         self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.centralwidget)
-        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(16, 384, 485, 73))
+        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(12, 404, 485, 73))
         self.horizontalLayoutWidget_5.setObjectName("horizontalLayoutWidget_5")
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_5)
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
@@ -147,7 +159,6 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "POD App"))
-        self.connectedCheck.setText(_translate("MainWindow", "Conectado"))
         self.label_3.setText(_translate("MainWindow", "Seleccione puerto del controlador"))
         self.conectarBtn.setText(_translate("MainWindow", "Conectar"))
         self.groupBox.setTitle(_translate("MainWindow", "Configuración de experimento"))
@@ -158,17 +169,9 @@ class Ui_MainWindow(object):
         self.label_6.setText(_translate("MainWindow", "m"))
         self.label_5.setText(_translate("MainWindow", "Radio"))
         self.label_7.setText(_translate("MainWindow", "mm"))
+        self.label_8.setText(_translate("MainWindow", "Carga"))
+        self.label_9.setText(_translate("MainWindow", "N"))
         self.startBtn.setText(_translate("MainWindow", "Empezar"))
         self.pauseBtn.setText(_translate("MainWindow", "Pausar"))
         self.stopBtn.setText(_translate("MainWindow", "Detener"))
 
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    loadSerialPorts()
-    MainWindow.show()
-    sys.exit(app.exec_())
