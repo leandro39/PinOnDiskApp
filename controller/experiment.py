@@ -10,10 +10,10 @@ import serial
 class Ensayo:
     def __init__(self, name, dist, radio, carga, puertoCelda, serialArduino):
         self._name = name
-        self._distancia = dist
-        self._radio = radio
-        self._vueltasTarget = int((dist*1000)/(2*pi*radio))
-        self._cargaExperimento = carga
+        self._distancia = int(dist)
+        self._radio = int(radio)
+        self._vueltasTarget = (self._distancia*1000)/(2*pi*self._radio)
+        self._cargaExperimento = int(carga)
         self._puertoCelda = puertoCelda
         self._serialArduino = serialArduino
         self._serialCelda = serial.Serial()
@@ -41,7 +41,7 @@ class Ensayo:
                 self._serialCelda.open()
 
             if not (self._serialCelda.is_open):
-                raise Exception('Error en puerto serial de celda de arga')
+                raise Exception('Error en puerto serial de celda de carga')
 
             #Init variables de experimento
             self.data = []
@@ -51,7 +51,7 @@ class Ensayo:
             self._dataReady = Event()
             self._lock = Lock()
 
-            self._serialArduino.write((f'<STAR,{self._radio},{self._vueltasTarget}>').encode())
+            self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             
             if not (self._serialArduino.readline().decode('ascii').strip() == "0"):
                 raise Exception('Error en comunicacion con controlador')
@@ -128,9 +128,9 @@ class Ensayo:
         with open(self._path + '\\' + self._name + '.csv', 'w') as out:
             csv_out = csv.writer(out)
             #Write metada
-            csv_out.writerow([f'#Nombre del experimento: {self.name}'])
-            today = time.strftime('%d/%m/%y - %H:%M:%S', time.gmtime(t0))
-            csv_out.writerow([f'#Fecha del experimento: {today}'])
+            csv_out.writerow(['#Nombre del experimento: {name}'.format(name=self._name)])
+            today = time.strftime('%d/%m/%y - %H:%M:%S', time.gmtime(self._t0))
+            csv_out.writerow(['#Fecha del experimento: {time}'.format(time=today)])
 
             #Write data 
             csv_out.writerow(['carga','distancia', 'tiempo'])

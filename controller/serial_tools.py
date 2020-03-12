@@ -1,5 +1,6 @@
 import serial.tools.list_ports 
 import time
+from controller import helper
 
 def get_serial_ports():
     return sorted([port.device for port in serial.tools.list_ports.comports()])
@@ -29,7 +30,7 @@ def open_serial(ser, lock):
         helper.show_error("No fue posible abrir el puerto " + ser.port + ".\n\n"
                           "Intente con otro puerto\n\n"
                           "Exception:\n" + str(e))
-        
+        pass
 
 def close_serial(ser):
     try:

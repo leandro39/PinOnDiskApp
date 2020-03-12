@@ -8,7 +8,7 @@ import queue
 import time
 from PyQt5 import QtCore, QtGui, QtWidgets
 from views.PinOnDiskMain import Ui_MainWindow
-from controller import serial_tools, helper
+from controller import serial_tools
 from controller.experiment import Ensayo
 
 ICON_RED_LED = '.\\views\\icons\\led-red-on.png'
@@ -53,6 +53,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.experimentNameInput.textChanged.connect(self.onTextChanged)
         self.ui.pathInput.textChanged.connect(self.onTextChanged)
         self.ui.cargaInput.textChanged.connect(self.onTextChanged)
+        self.ui.startBtn.clicked.connect(self.startBtn_ClickedEvent)
 
     #Button events
     def conectarBtn_ClickedEvent(self):
@@ -82,8 +83,9 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
                 
     def startBtn_ClickedEvent(self):
         #Creo nuevo ensayo
-        self.ensayo = Ensayo(self.ui.experimentNameInput.text(), self.ui.distanciaInput.text(), self.ui.radioCombo.currentText, self.ui.cargaInput.text(), self.configs['COMPORT_CELDA'], self.ser)
-        self.ensayo.setSavePath = self.pathParser()
+        self.ensayo = Ensayo(self.ui.experimentNameInput.text(), self.ui.distanciaInput.text(), self.ui.radioCombo.currentText(), self.ui.cargaInput.text(), self.configs['COMPORT_CELDA'], self.ser)
+        self.ensayo.setSavePath(self.pathParser())
+        self.ensayo.empezar()
         
 
     def pathParser(self):
