@@ -13,7 +13,7 @@ from controller.experiment import Ensayo
 
 ICON_RED_LED = '.\\views\\icons\\led-red-on.png'
 ICON_GREEN_LED = '.\\views\\icons\\green-led-on.png'
-
+QtWidgets.QMessageBox.question
 class PinOnDiskApp(QtWidgets.QMainWindow):
     
     def __init__(self):
@@ -25,8 +25,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         #Load configs
         with open('configs.json', 'r') as f:
             self.configs = json.loads(f.read())
-            print(self.configs['COMPORT_CELDA'])
-
+            
         #Setup the ui
         self.ui.setupUi(self)
         self.serial_ports = serial_tools.get_serial_ports()
@@ -44,7 +43,6 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         #Flow control variables
         self.isConnected = False
         self.ser = serial.Serial()
-        self.lock = Lock()
                 
         #Setup logic and signals
         self.ui.conectarBtn.clicked.connect(self.conectarBtn_ClickedEvent)
@@ -54,12 +52,14 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.pathInput.textChanged.connect(self.onTextChanged)
         self.ui.cargaInput.textChanged.connect(self.onTextChanged)
         self.ui.startBtn.clicked.connect(self.startBtn_ClickedEvent)
+        self.ui.stopBtn.clicked.connect(self.stopBtn_ClickedEvent)
 
     #Button events
     def conectarBtn_ClickedEvent(self):
         if not self.isConnected:
-            self.isConnected = serial_tools.try_connect(self.ser, self.ui.portCombo.currentText(), self.lock)
+            self.isConnected = serial_tools.try_connect(self.ser, self.ui.portCombo.currentText())
         else:
+            print('I enter here too')
             self.isConnected = serial_tools.close_serial(self.ser) 
         
         if self.isConnected:
@@ -85,8 +85,18 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         #Creo nuevo ensayo
         self.ensayo = Ensayo(self.ui.experimentNameInput.text(), self.ui.distanciaInput.text(), self.ui.radioCombo.currentText(), self.ui.cargaInput.text(), self.configs['COMPORT_CELDA'], self.ser)
         self.ensayo.setSavePath(self.pathParser())
+        self.ui.pauseBtn.setEnabled(True)
+        self.ui.stopBtn.setEnabled(True)
+        self.ui.startBtn.setEnabled(False)
         self.ensayo.empezar()
-        
+    
+    def stopBtn_ClickedEvent(self):
+        confirm = QtWidgets.QMessageBox.question(self,'Detener ensayo', "¿Está seguro que desea detener el experimento?",QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
+        if confirm == QtWidgets.QMessageBox.Yes:
+            self.ensayo.detener()
+            self.ui.startBtn.setEnabled(True)
+            self.ui.pauseBtn.setEnabled(False)
+            self.ui.stopBtn.setEnabled(False)
 
     def pathParser(self):
         return self.ui.pathInput.text().replace('/', '\\')

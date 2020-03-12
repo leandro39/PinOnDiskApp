@@ -47,9 +47,11 @@ class Ensayo:
             self.data = []
             self._celdaQ = queue.Queue()
             self._distQ = queue.Queue()
+            self._tyhQ = queue.Queue()
             self._dataEvent = Event()
             self._dataReady = Event()
             self._lock = Lock()
+
 
             self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             
@@ -61,8 +63,10 @@ class Ensayo:
             #Listeners de puerto serial y producers de queues
             t1 = Thread(target=self.__celdaListener)
             t2 = Thread(target=self.__controllerListener)
+            t6 = Thread(target=self.__requestTemperatureAndHumidity)
             #Consumer de queues y almacenador
             t3 = Thread(target=self.__dataWriter)
+            t6.start()
             t1.start()
             t2.start()
             t3.start()
@@ -76,9 +80,18 @@ class Ensayo:
         pass
 
     def detener(self):
-        t5 = Thread(target=self._detener)
-        t5.start() 
-        
+        t5 = Thread(target=self.__stopExperiment)
+        t5.start()
+    
+    def __stopExperiment(self):
+        if (self.isRunning):
+            self._lock.acquire()
+            self._serialArduino.write(b'<STOP>')
+            if (self._serialArduino.readline().decode('ascii').strip() == "1"):
+                self._lock.release()
+                self._stopThreads = True
+                self.isRunning = False
+                    
     def __celdaListener(self):
         while True:
             if self._stopThreads:
@@ -107,22 +120,46 @@ class Ensayo:
                     break
                 else:
                     vueltas = float(answer)
-                    self._distQ.put("{:10.2f}".format(vueltas*2*pi*self._radio).strip())
+                    self._distQ.put("{:10.2f}".format(vueltas*2*pi*self._radio*0.001).strip())
                     self._dataEvent.clear()
                     self._dataReady.set()
                               
     def __dataWriter(self):
-        while True:
-            if self._stopThreads:   
-                break     
-            self._dataReady.wait(1.5)
-            if (self._dataReady.isSet() and not (self._celdaQ.empty() and self._distQ.empty())):
-                timestamp = time.time()-self._t0
-                self._dataReady.clear()
-                self.data.append((self._celdaQ.get(),self._distQ.get(),timestamp))
-                   
-        if not ((len(self.data) == 0) or (len(self._path) == 0)):
-            self.__storeData() 
+        try:
+
+            self._out = open(self._path + '\\' + self._name + '.csv', 'w')
+            csv_out = csv.writer(out)
+            
+            #Write metada
+            csv_out.writerow(['#Nombre del experimento: {name}'.format(name=self._name)])
+            today = time.strftime('%d/%m/%y - %H:%M:%S', time.gmtime(self._t0))
+            csv_out.writerow(['#Fecha: {time}'.format(time=today)])
+            csv_out.writerow(['#Radio: {radio}mm'.format(radio=self._radio)])
+            csv_out.writerow(['#Distancia: {dist}m'.format(dist=self._distancia)])
+            csv_out.writerow(['#Carga: {carga}N'.format(carga=self._cargaExperimento)])
+            csv_out.writerow(['fuerza[kg]','distancia[m]', 'tiempo[s]', 'temperatura[°C]', 'humedad[%]'])
+            self._out.flush()
+
+            while True:
+                if self._stopThreads:   
+                    break     
+                self._dataReady.wait(1.5)
+                if (self._dataReady.isSet() and not (self._celdaQ.empty() and self._distQ.empty())):
+                    timestamp = time.time()-self._t0
+                    self._dataReady.clear()
+                    #self.data.append((self._celdaQ.get(),self._distQ.get(),timestamp))
+                    if(self._tyhQ.empty()):
+                        csv_out.writerow([self._celdaQ.get(),self._distQ.get(),"{:10.2f}".format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])
+                    else:
+                        self.tempHumedad = self._tyhQ.get()
+                        csv_out.writerow([self._celdaQ.get(),self._distQ.get(),"{:10.2f}".format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])
+                    self._out.flush()
+            
+            # if not ((len(self.data) == 0) or (len(self._path) == 0)):
+            #     self.__storeData()
+        
+        finally:
+            self._out.close()
 
     def __storeData(self):
         with open(self._path + '\\' + self._name + '.csv', 'w') as out:
@@ -137,5 +174,17 @@ class Ensayo:
             for row in self.data:
                 csv_out.writerow(row)
 
-    
+    def __requestTemperatureAndHumidity(self):
+        while True:
+            if self._stopThreads:
+                break
+            self._lock.acquire()
+            self._serialArduino.write(b'<TMHM>\n')
+            humedad = self._serialArduino.readline().decode('ascii').strip()
+            temperatura = self._serialArduino.readline().decode('ascii').strip()
+            self._lock.release()
+            self._tyhQ.put((temperatura, humedad))
+
+            time.sleep(60)
+
 

@@ -6,7 +6,8 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-pyserial = "<=3.0.1"
+pyserial = "<=3.0"
+pyqt5 = "==5.5"
 
 [requires]
-python_version = "3.8"
+python_version = ">3.4.3"
