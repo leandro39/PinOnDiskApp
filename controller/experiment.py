@@ -45,6 +45,8 @@ class Ensayo:
 
             #Init variables de experimento
             self.data = []
+            self.tempHumedad = (0,0)
+            self.plotterQ = queue.Queue()
             self._celdaQ = queue.Queue()
             self._distQ = queue.Queue()
             self._tyhQ = queue.Queue()
@@ -141,15 +143,19 @@ class Ensayo:
             self._out.flush()
 
             while True:
-                if self._stopThreads:   
+                if self._stopThreads:
+                    self.plotterQ.put('end')   
                     break     
                 self._dataReady.wait(1.5)
                 if (self._dataReady.isSet() and not (self._celdaQ.empty() and self._distQ.empty())):
                     timestamp = time.time()-self._t0
                     self._dataReady.clear()
                     #self.data.append((self._celdaQ.get(),self._distQ.get(),timestamp))
+                    celda = self._celdaQ.get()
+                    distancia = self._distQ.get()
+                    self.plotterQ.put((celda, distancia))
                     if(self._tyhQ.empty()):
-                        csv_out.writerow([self._celdaQ.get(),self._distQ.get(),"{:10.2f}".format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])
+                        csv_out.writerow([celda, distancia,"{:10.2f}".format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])
                     else:
                         self.tempHumedad = self._tyhQ.get()
                         csv_out.writerow([self._celdaQ.get(),self._distQ.get(),"{:10.2f}".format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])

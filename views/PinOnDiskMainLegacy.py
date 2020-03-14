@@ -1,5 +1,6 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -21,33 +22,29 @@ class Ui_MainWindow(object):
         self.portCombo = QtWidgets.QComboBox(self.horizontalLayoutWidget_3)
         self.portCombo.setObjectName("portCombo")
         self.gridLayout.addWidget(self.portCombo, 1, 0, 1, 4)
-
+        
         self.labelNotConnected = QtWidgets.QLabel(self.horizontalLayoutWidget_3)
         self.labelNotConnected.setMaximumHeight(26)
         self.labelNotConnected.setMaximumWidth(26)
         self.labelNotConnected.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.labelNotConnected.setText = ""
-        #self.labelNotConnected.setPixmap(QtGui.QPixmap('.\\icons\\led-red-on.png'))
         self.labelNotConnected.setScaledContents(True)
         self.labelNotConnected.setObjectName("labelNotConnected")
-        
-        
+        self.gridLayout.addWidget(self.labelNotConnected, 1, 12, 1, 4)
+
         self.labelConnected = QtWidgets.QLabel(self.horizontalLayoutWidget_3)
         self.labelConnected.setMaximumHeight(26)
         self.labelConnected.setMaximumWidth(26)
         self.labelConnected.setFrameShape(QtWidgets.QFrame.NoFrame)
         self.labelConnected.setText = ""
-        #self.labelConnected.setPixmap(QtGui.QPixmap('.\\icons\\green-led-on.png'))
         self.labelConnected.setScaledContents(True)
         self.labelConnected.setObjectName("labelConnected")
+        self.gridLayout.addWidget(self.labelConnected, 1, 12, 1, 4)
         self.labelConnected.hide()
 
-
-        self.gridLayout.addWidget(self.labelNotConnected, 1, 12, 1, 4)
-        self.gridLayout.addWidget(self.labelConnected, 1, 12, 1, 4)
         self.label_3 = QtWidgets.QLabel(self.horizontalLayoutWidget_3)
         self.label_3.setObjectName("label_3")
-        self.gridLayout.addWidget(self.label_3, 0, 0, 1, 10)
+        self.gridLayout.addWidget(self.label_3, 0, 0, 1, 1)
         self.conectarBtn = QtWidgets.QPushButton(self.horizontalLayoutWidget_3)
         self.conectarBtn.setObjectName("conectarBtn")
         self.gridLayout.addWidget(self.conectarBtn, 1, 5, 1, 4)
@@ -56,7 +53,7 @@ class Ui_MainWindow(object):
         self.gridLayout.setColumnStretch(2, 1)
         self.groupBox = QtWidgets.QGroupBox(self.centralwidget)
         self.groupBox.setEnabled(False)
-        self.groupBox.setGeometry(QtCore.QRect(8, 88, 493, 285))
+        self.groupBox.setGeometry(QtCore.QRect(8, 88, 493, 325))
         self.groupBox.setLayoutDirection(QtCore.Qt.LeftToRight)
         self.groupBox.setAutoFillBackground(True)
         self.groupBox.setAlignment(QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft|QtCore.Qt.AlignVCenter)
@@ -64,7 +61,7 @@ class Ui_MainWindow(object):
         self.groupBox.setCheckable(False)
         self.groupBox.setObjectName("groupBox")
         self.verticalLayoutWidget_2 = QtWidgets.QWidget(self.groupBox)
-        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(8, 24, 481, 249))
+        self.verticalLayoutWidget_2.setGeometry(QtCore.QRect(8, 24, 481, 285))
         self.verticalLayoutWidget_2.setObjectName("verticalLayoutWidget_2")
         self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_2)
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -73,7 +70,7 @@ class Ui_MainWindow(object):
         self.label_2.setObjectName("label_2")
         self.verticalLayout_3.addWidget(self.label_2)
         self.experimentNameInput = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
-        self.experimentNameInput.setObjectName("experimentNameInput")      
+        self.experimentNameInput.setObjectName("experimentNameInput")
         self.verticalLayout_3.addWidget(self.experimentNameInput)
         self.label = QtWidgets.QLabel(self.verticalLayoutWidget_2)
         self.label.setObjectName("label")
@@ -81,6 +78,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.pathInput = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
+        self.pathInput.setEnabled(False)
         self.pathInput.setReadOnly(True)
         self.pathInput.setObjectName("pathInput")
         self.horizontalLayout_2.addWidget(self.pathInput)
@@ -114,8 +112,22 @@ class Ui_MainWindow(object):
         self.label_7.setObjectName("label_7")
         self.horizontalLayout_3.addWidget(self.label_7)
         self.verticalLayout_3.addLayout(self.horizontalLayout_3)
+        self.label_8 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.label_8.setObjectName("label_8")
+        self.verticalLayout_3.addWidget(self.label_8)
+        self.horizontalLayout_5 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        self.cargaInput = QtWidgets.QLineEdit(self.verticalLayoutWidget_2)
+        self.cargaInput.setObjectName("cargaInput")
+        self.horizontalLayout_5.addWidget(self.cargaInput)
+        self.label_9 = QtWidgets.QLabel(self.verticalLayoutWidget_2)
+        self.label_9.setObjectName("label_9")
+        self.horizontalLayout_5.addWidget(self.label_9)
+        self.horizontalLayout_5.setStretch(0, 1)
+        self.horizontalLayout_5.setStretch(1, 1)
+        self.verticalLayout_3.addLayout(self.horizontalLayout_5)
         self.horizontalLayoutWidget_5 = QtWidgets.QWidget(self.centralwidget)
-        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(16, 384, 485, 73))
+        self.horizontalLayoutWidget_5.setGeometry(QtCore.QRect(12, 404, 485, 73))
         self.horizontalLayoutWidget_5.setObjectName("horizontalLayoutWidget_5")
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.horizontalLayoutWidget_5)
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
@@ -140,12 +152,9 @@ class Ui_MainWindow(object):
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-        # self.loadSerialPorts()
-        # self.conectarBtn.clicked.connect(self.conectarBtn_ClickEvent)
-
-        
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -160,19 +169,9 @@ class Ui_MainWindow(object):
         self.label_6.setText(_translate("MainWindow", "m"))
         self.label_5.setText(_translate("MainWindow", "Radio"))
         self.label_7.setText(_translate("MainWindow", "mm"))
+        self.label_8.setText(_translate("MainWindow", "Carga"))
+        self.label_9.setText(_translate("MainWindow", "N"))
         self.startBtn.setText(_translate("MainWindow", "Empezar"))
         self.pauseBtn.setText(_translate("MainWindow", "Pausar"))
         self.stopBtn.setText(_translate("MainWindow", "Detener"))
-
-        
-    def conectarBtn_ClickEvent(self):
-        
-        if self.labelConnected.isVisible():
-            self.labelConnected.setVisible(False)
-            self.labelNotConnected.setVisible(True)
-        else:
-            self.labelConnected.setVisible(True)
-            self.labelNotConnected.setVisible(False)
-
-
 

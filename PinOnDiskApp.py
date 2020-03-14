@@ -11,9 +11,17 @@ from views.PinOnDiskMain import Ui_MainWindow
 from controller import serial_tools
 from controller.experiment import Ensayo
 
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+from matplotlib.figure import Figure
+import random
+import numpy as np
+
 ICON_RED_LED = '.\\views\\icons\\led-red-on.png'
 ICON_GREEN_LED = '.\\views\\icons\\green-led-on.png'
-QtWidgets.QMessageBox.question
+
 class PinOnDiskApp(QtWidgets.QMainWindow):
     
     def __init__(self):
@@ -25,7 +33,8 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         #Load configs
         with open('configs.json', 'r') as f:
             self.configs = json.loads(f.read())
-            
+
+        self.dialogs = list()           
         #Setup the ui
         self.ui.setupUi(self)
         self.serial_ports = serial_tools.get_serial_ports()
@@ -35,6 +44,8 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.labelNotConnected.show()
         self.ui.labelConnected.setPixmap(QtGui.QPixmap(ICON_GREEN_LED))
         self.ui.labelConnected.hide()
+        self.ui.progressLabel.setVisible(False)
+        
         self.validator = QtGui.QIntValidator()
         self.validator.setBottom(0)
         self.ui.distanciaInput.setValidator(self.validator)
@@ -56,23 +67,24 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
     #Button events
     def conectarBtn_ClickedEvent(self):
-        if not self.isConnected:
-            self.isConnected = serial_tools.try_connect(self.ser, self.ui.portCombo.currentText())
-        else:
-            print('I enter here too')
-            self.isConnected = serial_tools.close_serial(self.ser) 
+        plot = Plotter()
+        plot.show()
+        # if not self.isConnected:
+        #     self.isConnected = serial_tools.try_connect(self.ser, self.ui.portCombo.currentText())
+        # else:
+        #     self.isConnected = serial_tools.close_serial(self.ser) 
         
-        if self.isConnected:
-            self.ui.groupBox.setEnabled(True)
-            self.ui.labelNotConnected.hide()
-            self.ui.labelConnected.show()
-            self.ui.conectarBtn.setText("Desconectar")
+        # if self.isConnected:
+        #     self.ui.groupBox.setEnabled(True)
+        #     self.ui.labelNotConnected.hide()
+        #     self.ui.labelConnected.show()
+        #     self.ui.conectarBtn.setText("Desconectar")
 
-        else:
-            self.ui.groupBox.setEnabled(False)
-            self.ui.labelNotConnected.show()
-            self.ui.labelConnected.hide()
-            self.ui.conectarBtn.setText("Conectar")
+        # else:
+        #     self.ui.groupBox.setEnabled(False)
+        #     self.ui.labelNotConnected.show()
+        #     self.ui.labelConnected.hide()
+        #     self.ui.conectarBtn.setText("Conectar")
   
     def pathBrowseBtn_ClickedEvent(self):
         self.ui.pathInput.setText(str(QtWidgets.QFileDialog.getExistingDirectory(self, "Elija una carpeta en donde guardar los datos del experimento")))
@@ -100,6 +112,64 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
     def pathParser(self):
         return self.ui.pathInput.text().replace('/', '\\')
+
+class Plotter(QtWidgets.QDialog):
+    def __init__(self, ensayo = None, parent=None):
+        super(Plotter, self).__init__(parent)
+        self.setWindowFlags((self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint) | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
+        self.setWindowTitle("Ensayo")
+        self.setStyleSheet("QWidget { background-color: #ffffff; }")
+        self.canvas = FigureCanvas(Figure(figsize=(10,6)))
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.toolbar.setVisible(False)
+        self._dynamic_ax = self.canvas.figure.subplots()
+        self._dynamic_ax.grid()
+        self._dynamic_ax.set_title('Ensayo: Agos genia', pad=15)
+        self._dynamic_ax.set_xlabel('Distancia [m]', labelpad=15)
+        self._dynamic_ax.set_ylabel('Fuerza de rozamiento [kg]', labelpad=20)
+        self._dynamic_ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+
+        # set the layout
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+        self.setLayout(layout)
+
+        t = Thread(target=self._update_canvas)
+        t.start()
+
+    def _update_canvas(self):
+        
+        f = open('data\\test1.csv', 'r')
+        cs = csv.reader(f)
+        lines = next(f).split(',')
+        
+        self._dynamic_ax.plot(float(lines[1]), float(lines[0]))
+        self._dynamic_ax.figure.canvas.draw()
+        line = self._dynamic_ax.get_lines()[0]
+        for row in cs:
+            line.set_xdata(np.append(line.get_xdata(),(float(row[1]))))
+            line.set_ydata(np.append(line.get_ydata(),(float(row[0]))))
+            self._dynamic_ax.set_ylim(0,np.max(line.get_ydata()))
+            self._dynamic_ax.set_xlim(0,np.max(line.get_xdata()))
+            self._dynamic_ax.figure.canvas.draw()
+            time.sleep(0.4)
+        f.close()
+        
+        
+        # while True:
+        #     data = self.ensayo.plotterQ.get()
+        #     if data == 'end':
+        #         break
+        #     else:
+        #         self._dynamic_ax.set
+        #self._dynamic_ax.grid()
+        #t = np.linspace(0, 10, 101)
+        # Shift the sinusoid as a function of time.
+        #self._dynamic_ax.plot(t, np.sin(t + time.time()))
+        #self._dynamic_ax.set_xlim(left=0)
+        #self._dynamic_ax.figure.canvas.draw()
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)

@@ -9,20 +9,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>516</width>
-    <height>516</height>
+    <width>510</width>
+    <height>618</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="minimumSize">
    <size>
-    <width>516</width>
-    <height>516</height>
+    <width>510</width>
+    <height>618</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>516</width>
-    <height>516</height>
+    <width>510</width>
+    <height>618</height>
    </size>
   </property>
   <property name="contextMenuPolicy">
@@ -44,38 +50,109 @@
       <x>16</x>
       <y>4</y>
       <width>481</width>
-      <height>59</height>
+      <height>85</height>
      </rect>
     </property>
-    <layout class="QGridLayout" name="gridLayout" columnstretch="3,2,1">
+    <layout class="QGridLayout" name="gridLayout" columnstretch="1,0,0" rowminimumheight="0,0">
+     <property name="topMargin">
+      <number>5</number>
+     </property>
+     <property name="bottomMargin">
+      <number>5</number>
+     </property>
+     <property name="spacing">
+      <number>7</number>
+     </property>
      <item row="1" column="0">
       <widget class="QComboBox" name="portCombo"/>
-     </item>
-     <item row="1" column="2">
-      <widget class="QCheckBox" name="connectedCheck">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="text">
-        <string>Conectado</string>
-       </property>
-       <property name="checkable">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>Seleccione puerto del controlador</string>
-       </property>
-      </widget>
      </item>
      <item row="1" column="1">
       <widget class="QPushButton" name="conectarBtn">
        <property name="text">
         <string>Conectar</string>
        </property>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>15</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Seleccione puerto del controlador</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QWidget" name="widget" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>26</width>
+         <height>26</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>26</width>
+         <height>26</height>
+        </size>
+       </property>
+       <property name="styleSheet">
+        <string notr="true"/>
+       </property>
+       <widget class="QLabel" name="labelNotConnected">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>26</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>icons/led-red-on.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
+       <widget class="QLabel" name="labelConnected">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>26</width>
+          <height>26</height>
+         </rect>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>26</width>
+          <height>26</height>
+         </size>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="pixmap">
+         <pixmap>icons/green-led-on.png</pixmap>
+        </property>
+        <property name="scaledContents">
+         <bool>true</bool>
+        </property>
+       </widget>
       </widget>
      </item>
     </layout>
@@ -87,7 +164,7 @@
     <property name="geometry">
      <rect>
       <x>8</x>
-      <y>88</y>
+      <y>100</y>
       <width>493</width>
       <height>325</height>
      </rect>
@@ -210,9 +287,9 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_5" stretch="1,1">
         <item>
-         <widget class="QLineEdit" name="lineEdit">
+         <widget class="QLineEdit" name="cargaInput">
           <property name="text">
-           <string>`</string>
+           <string/>
           </property>
          </widget>
         </item>
@@ -231,10 +308,10 @@
    <widget class="QWidget" name="horizontalLayoutWidget_5">
     <property name="geometry">
      <rect>
-      <x>12</x>
-      <y>404</y>
-      <width>485</width>
-      <height>73</height>
+      <x>8</x>
+      <y>472</y>
+      <width>493</width>
+      <height>41</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -270,13 +347,82 @@
      </item>
     </layout>
    </widget>
+   <widget class="QPushButton" name="stopBtn_2">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>8</x>
+      <y>440</y>
+      <width>493</width>
+      <height>28</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Prueba</string>
+    </property>
+   </widget>
+   <widget class="QWidget" name="gridLayoutWidget">
+    <property name="geometry">
+     <rect>
+      <x>8</x>
+      <y>524</y>
+      <width>493</width>
+      <height>80</height>
+     </rect>
+    </property>
+    <layout class="QGridLayout" name="gridLayout_2" rowminimumheight="50,1">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinAndMaxSize</enum>
+     </property>
+     <property name="verticalSpacing">
+      <number>0</number>
+     </property>
+     <item row="0" column="0">
+      <widget class="QProgressBar" name="progressBar">
+       <property name="value">
+        <number>0</number>
+       </property>
+       <property name="textVisible">
+        <bool>false</bool>
+       </property>
+       <property name="invertedAppearance">
+        <bool>false</bool>
+       </property>
+       <property name="textDirection">
+        <enum>QProgressBar::TopToBottom</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="progressLabel">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>554 de 11605 vueltas</string>
+       </property>
+       <property name="scaledContents">
+        <bool>false</bool>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignHCenter|Qt::AlignTop</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>516</width>
+     <width>510</width>
      <height>26</height>
     </rect>
    </property>
