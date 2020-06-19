@@ -33,7 +33,8 @@ def open_serial(ser):
 
 def close_serial(ser):
     try:
-        if (ser.is_open):    
+        if (ser.is_open): 
+            ser.write(b'<DCON>\n')   
             ser.close()
             
     except Exception as e:

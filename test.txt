@@ -1,0 +1,11 @@
+Fecha	18/06/20	12:09:32
+Operador	Test
+Material	Test
+Dureza	Test
+Tratamiento	Test
+Radio	5
+Distancia	500
+Carga	5
+Bolilla	Test
+Diametro bolilla	Test
+fuerza[kg]	distancia[m]	tiempo[s]	temperatura[°C]	humedad[%]

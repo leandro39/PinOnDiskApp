@@ -347,7 +347,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="QPushButton" name="stopBtn_2">
+   <widget class="QPushButton" name="testBtn">
     <property name="enabled">
      <bool>false</bool>
     </property>

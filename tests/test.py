@@ -1,7 +1,6 @@
-from experiment import *
+import argparse
 
-exp1 = Experimento(500,7,10,'COM9','COM11')
-exp1.conectar()
-exp1.setSavePath('C:\\Users\\leanl\\Desktop\\GIS\\data.csv')
-exp1.empezar()
-
+parser = argparse.ArgumentParser(description="Simula stream de datos de celda de carga por puerto serial")
+parser.add_argument('--port', action='store', help='Puerto al cual va a streamear', required=True, dest='port')
+args = parser.parse_args()
+print(type(args.port))
