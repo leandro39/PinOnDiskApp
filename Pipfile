@@ -6,8 +6,10 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-pyserial = "<=3.0"
-pyqt5 = "==5.5"
+pyserial = "==3.0.1"
+pyqt5 = "==5.6"
+matplotlib = "==2.0.2"
+numpy = "==1.16.6"
 
 [requires]
-python_version = ">3.4.3"
+python_version = "3.4.3"

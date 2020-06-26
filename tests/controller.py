@@ -62,7 +62,7 @@ def main():
                 resetVars()
                 isRunning = True
             if (vueltasT >= vueltas):
-                ser.write('1\n'.encode())
+                ser.write('-1\n'.encode())
                 isRunning = False
                 state = 'WAIT'
             if (command == 'PAUS'):

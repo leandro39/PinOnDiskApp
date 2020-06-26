@@ -65,8 +65,8 @@ class Ensayo(QtCore.QObject):
             self._lock = Lock()
             
             #Empty buffers
-            self._serialArduino.flushInput()
-            self._serialArduino.flushOutput()
+            self._serialArduino.reset_input_buffer()
+            self._serialArduino.reset_output_buffer()
             
             if (self.TEST_ENV):
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>\n'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
@@ -74,6 +74,7 @@ class Ensayo(QtCore.QObject):
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             
             response = self._serialArduino.readline().decode('ascii').strip()
+            print(response)
             
             if not (response == "0"):
                 raise Exception('Error en comunicacion con controlador')
@@ -140,6 +141,7 @@ class Ensayo(QtCore.QObject):
                 else:
                     self._serialArduino.write(b'<STOP>')
                 answer = self._serialArduino.readline().decode('ascii').strip()
+                print(answer)
                 self._lock.release()
                 if (answer == "-1"):
                     print(answer)
@@ -167,6 +169,7 @@ class Ensayo(QtCore.QObject):
                         celda = celda.decode('ascii').strip()[8:13]
                     else:
                         celda = celda.decode('ascii').strip()[4:9]  #Parse poco prolijo para test
+                    print('Celda: ' + celda)
                     self._celdaQ.put(celda)  
                     self._dataEvent.set()
         
@@ -191,8 +194,9 @@ class Ensayo(QtCore.QObject):
                     else:
                         self._serialArduino.write(b'<SEND>')
                     answer = self._serialArduino.readline().decode('ascii').strip()
+                    print('Arduino: ' + answer)
                     self._lock.release()
-                    if (answer == "1"):
+                    if (answer == "-1"):
                         self._stopThreads = True
                         self._dataEvent.clear()
                         self.isRunning = False
@@ -275,19 +279,27 @@ class Ensayo(QtCore.QObject):
     
     def __requestTemperatureAndHumidity(self):
         try:
+            timer = 60
             while True:
                 if self._stopThreads:
+                    
                     break
-                self._lock.acquire()
-                if (self.TEST_ENV):
-                    self._serialArduino.write(b'<TMHM>\n')
-                else:
-                    self._serialArduino.write(b'<TMHM>')
-                humedad = self._serialArduino.readline().decode('ascii').strip()
-                temperatura = self._serialArduino.readline().decode('ascii').strip()
-                self._lock.release()
-                self._tyhQ.put((temperatura, humedad))
-                time.sleep(60)
+                if (timer == 60):
+                    self._lock.acquire()
+                    if (self.TEST_ENV):
+                        self._serialArduino.write(b'<TMHM>\n')
+                    else:
+                        self._serialArduino.write(b'<TMHM>')
+                    
+                    humedad = self._serialArduino.readline().decode('ascii').strip()
+                    temperatura = self._serialArduino.readline().decode('ascii').strip()
+                    self._lock.release()
+                    self._tyhQ.put((temperatura, humedad))
+                    print('Temperatura: ' + temperatura)
+                    print('Humedad: ' + humedad)
+                    timer = 0
+                time.sleep(1)
+                timer += 1
         except Exception as e:
             msgBox = QMessageBox()
             msgBox.setIcon(QMessageBox.Critical)

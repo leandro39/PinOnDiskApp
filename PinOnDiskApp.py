@@ -141,6 +141,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         return self.ui.pathInput.text().replace('/', '\\')
 
     def testBtn_ClickedEvent(self):
+        print(TEST_ENV)
         testing = Ensayo.test(self.ser, TEST_ENV)
         if (testing):
             # Test started
@@ -170,18 +171,18 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.progressBar.setValue(self.ui.progressBar.maximum())
         self.ui.progressLabel.setText('{targetVueltas} vueltas de {targetVueltas}'.format(targetVueltas=int(self.ensayo.getVueltasTarget())))
         self.progress.killThread = True
-        self.ser.flushInput()
-        self.ser.flushOutput()
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         
         
         # ONLY DEBUG
-        # time.sleep(6)
-        # print(f'Celda thread is alive: {self.ensayo.t1.is_alive()}')
-        # print(f'Controller thread is alive: {self.ensayo.t2.is_alive()}')
-        # print(f'Data writer thread: {self.ensayo.t3.is_alive()}')
-        # print(f'Temp y humedad thread is alive : {self.ensayo.t6.is_alive()}')
-        # print(f'Plotter thread is alive: {self.plot.t.is_alive()}')
-        # print(f'Progress bar updater thread is alive: {self.progress.isRunning()}')
+        time.sleep(2)
+        print('Celda thread is alive: {t1}'.format(t1=self.ensayo.t1.is_alive()))
+        print('Controller thread is alive: {t2}'.format(t2=self.ensayo.t2.is_alive()))
+        print('Data writer thread: {t3}'.format(t3=self.ensayo.t3.is_alive()))
+        print('Temp y humedad thread is alive : {t6}'.format(t6=self.ensayo.t6.is_alive()))
+        print('Plotter thread is alive: {t}'.format(t=self.plot.t.is_alive()))
+        print('Progress bar updater thread is alive: {t}'.format(t=self.progress.isRunning()))
 
 
 class ProgressBarUpdater(QtCore.QThread):
@@ -198,7 +199,10 @@ class ProgressBarUpdater(QtCore.QThread):
                 if (self.killThread):
                     break
                 vueltas = self.vueltasQueue.get(timeout=1.5)
-                self.currentVueltas.emit(int(vueltas))
+                if (type(vueltas) != float):
+                    pass
+                else:
+                    self.currentVueltas.emit(int(vueltas))
             except queue.Empty:
                 pass
 
