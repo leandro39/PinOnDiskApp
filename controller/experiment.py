@@ -74,7 +74,7 @@ class Ensayo(QtCore.QObject):
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             
             response = self._serialArduino.readline().decode('ascii').strip()
-            print(response)
+            # print(response)
             
             if not (response == "0"):
                 raise Exception('Error en comunicacion con controlador')
@@ -115,7 +115,7 @@ class Ensayo(QtCore.QObject):
                 port.write(b'<TEST>')
             
             answer = port.readline().decode('ascii').strip()
-            print(answer)
+            # print(answer)
             if (answer == '0'):
                 return 1
             
@@ -141,10 +141,10 @@ class Ensayo(QtCore.QObject):
                 else:
                     self._serialArduino.write(b'<STOP>')
                 answer = self._serialArduino.readline().decode('ascii').strip()
-                print(answer)
+                # print(answer)
                 self._lock.release()
                 if (answer == "-1"):
-                    print(answer)
+                    # print(answer)
                     self._lock.acquire()
                     self._stopThreads = True
                     self._lock.release()
@@ -169,7 +169,7 @@ class Ensayo(QtCore.QObject):
                         celda = celda.decode('ascii').strip()[8:13]
                     else:
                         celda = celda.decode('ascii').strip()[4:9]  #Parse poco prolijo para test
-                    print('Celda: ' + celda)
+                    # print('Celda: ' + celda)
                     self._celdaQ.put(celda)  
                     self._dataEvent.set()
         
@@ -194,7 +194,7 @@ class Ensayo(QtCore.QObject):
                     else:
                         self._serialArduino.write(b'<SEND>')
                     answer = self._serialArduino.readline().decode('ascii').strip()
-                    print('Arduino: ' + answer)
+                    # print('Arduino: ' + answer)
                     self._lock.release()
                     if (answer == "-1"):
                         self._stopThreads = True
@@ -240,7 +240,7 @@ class Ensayo(QtCore.QObject):
             csv_out.writerow(['Distancia', self._distancia])
             csv_out.writerow(['Carga', self._cargaExperimento])
             csv_out.writerow(['Bolilla', 'Test'])
-            csv_out.writerow(['Diametro bolilla', 'Test'])
+            csv_out.writerow(['Diametro', 'Test'])
             csv_out.writerow(['fuerza[kg]','distancia[m]', 'tiempo[s]', 'temperatura[°C]', 'humedad[%]'])
             self._out.flush()
 
@@ -295,8 +295,8 @@ class Ensayo(QtCore.QObject):
                     temperatura = self._serialArduino.readline().decode('ascii').strip()
                     self._lock.release()
                     self._tyhQ.put((temperatura, humedad))
-                    print('Temperatura: ' + temperatura)
-                    print('Humedad: ' + humedad)
+                    # print('Temperatura: ' + temperatura)
+                    # print('Humedad: ' + humedad)
                     timer = 0
                 time.sleep(1)
                 timer += 1

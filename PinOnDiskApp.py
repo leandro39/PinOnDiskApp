@@ -141,7 +141,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         return self.ui.pathInput.text().replace('/', '\\')
 
     def testBtn_ClickedEvent(self):
-        print(TEST_ENV)
+        # print(TEST_ENV)
         testing = Ensayo.test(self.ser, TEST_ENV)
         if (testing):
             # Test started
@@ -176,13 +176,14 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         
         
         # ONLY DEBUG
-        time.sleep(2)
-        print('Celda thread is alive: {t1}'.format(t1=self.ensayo.t1.is_alive()))
-        print('Controller thread is alive: {t2}'.format(t2=self.ensayo.t2.is_alive()))
-        print('Data writer thread: {t3}'.format(t3=self.ensayo.t3.is_alive()))
-        print('Temp y humedad thread is alive : {t6}'.format(t6=self.ensayo.t6.is_alive()))
-        print('Plotter thread is alive: {t}'.format(t=self.plot.t.is_alive()))
-        print('Progress bar updater thread is alive: {t}'.format(t=self.progress.isRunning()))
+        if (TEST_ENV):
+            time.sleep(2)
+            print('Celda thread is alive: {t1}'.format(t1=self.ensayo.t1.is_alive()))
+            print('Controller thread is alive: {t2}'.format(t2=self.ensayo.t2.is_alive()))
+            print('Data writer thread: {t3}'.format(t3=self.ensayo.t3.is_alive()))
+            print('Temp y humedad thread is alive : {t6}'.format(t6=self.ensayo.t6.is_alive()))
+            print('Plotter thread is alive: {t}'.format(t=self.plot.t.is_alive()))
+            print('Progress bar updater thread is alive: {t}'.format(t=self.progress.isRunning()))
 
 
 class ProgressBarUpdater(QtCore.QThread):
@@ -221,6 +222,7 @@ class Plotter(QtWidgets.QDialog):
         self._dynamic_ax.set_xlabel('Distancia [m]', labelpad=15)
         self._dynamic_ax.set_ylabel('Fuerza de rozamiento [kg]', labelpad=20)
         self._dynamic_ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+        plt.tight_layout()
 
         # set the layout
         layout = QtWidgets.QVBoxLayout()
@@ -233,24 +235,7 @@ class Plotter(QtWidgets.QDialog):
         self.t.start()
 
     def _update_canvas(self):
-        
-        # f = open('data\\test1.csv', 'r')
-        # cs = csv.reader(f)
-        # lines = next(f).split(',')
-        
-        # self._dynamic_ax.plot(float(lines[1]), float(lines[0]))
-        # self._dynamic_ax.figure.canvas.draw()
-        # line = self._dynamic_ax.get_lines()[0]
-        # for row in cs:
-        #     line.set_xdata(np.append(line.get_xdata(),(float(row[1]))))
-        #     line.set_ydata(np.append(line.get_ydata(),(float(row[0]))))
-        #     self._dynamic_ax.set_ylim(0,np.max(line.get_ydata()))
-        #     self._dynamic_ax.set_xlim(0,np.max(line.get_xdata()))
-        #     self._dynamic_ax.figure.canvas.draw()
-        #     time.sleep(0.4)
-        # f.close()
 
-        
         data = self.ensayo.plotterQ.get()
         self._dynamic_ax.plot(float(data[1]), float(data[0]))
         self._dynamic_ax.figure.canvas.draw()
@@ -263,11 +248,14 @@ class Plotter(QtWidgets.QDialog):
                 else:
                     xdata = line.get_xdata()
                     ydata = line.get_ydata()
-                    if (line.get_xdata().size >= BUFFER_SIZE):
-
-                        # Left shift array to move x axis once BUFFER_SIZE is reached
-                        line.set_xdata(np.append(xdata, float(data[1]))[1:])
-                        line.set_ydata(np.append(ydata, float(data[0]))[1:])
+                    if (BUFFER_SIZE > 0):
+                        if(line.get_xdata().size >= BUFFER_SIZE):
+                            # Left shift array to move x axis once BUFFER_SIZE is reached
+                            line.set_xdata(np.append(xdata, float(data[1]))[1:])
+                            line.set_ydata(np.append(ydata, float(data[0]))[1:])
+                        else:
+                            line.set_xdata(np.append(xdata, float(data[1])))
+                            line.set_ydata(np.append(ydata, float(data[0])))
                     else:
                         line.set_xdata(np.append(xdata, float(data[1])))
                         line.set_ydata(np.append(ydata, float(data[0])))
