@@ -119,7 +119,9 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         
         # Plotter setup
         self.plot = Plotter(ensayo = self.ensayo, test = self.ui.experimentNameInput.text(), r = self.ui.radioCombo.currentText(), d = self.ui.distanciaInput.text(), c = self.ui.cargaInput.text())
+        plt.tight_layout()
         self.plot.show()
+        
 
         # Progress bar setup
         self.ui.progressBar.reset()
@@ -215,20 +217,21 @@ class Plotter(QtWidgets.QDialog):
         self.setStyleSheet("QWidget { background-color: #ffffff; }")
         self.canvas = FigureCanvas(Figure(figsize=(10,6)))
         self.toolbar = NavigationToolbar(self.canvas, self)
-        self.toolbar.setVisible(True)
+        self.toolbar.setVisible(False)
         self._dynamic_ax = self.canvas.figure.subplots()
         self._dynamic_ax.grid()
         self._dynamic_ax.set_title('Ensayo: {name} - Radio: {radio}mm - Distancia: {dist}m - Carga: {carga}N'.format(name=test, radio=r, dist=d, carga=c), pad=15)
         self._dynamic_ax.set_xlabel('Distancia [m]', labelpad=15)
         self._dynamic_ax.set_ylabel('Fuerza de rozamiento [kg]', labelpad=20)
         self._dynamic_ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
-        plt.tight_layout()
+        
 
         # set the layout
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
         self.setLayout(layout)
+        self.resize(1060,600)
 
         self.ensayo = ensayo
         self.t = Thread(target=self._update_canvas, daemon=True)
