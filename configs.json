@@ -1,5 +1,5 @@
 {
-  "COMPORT_CELDA": "COM9",
-  "TEST_ENV": 1,
+  "COMPORT_CELDA": "COM1",
+  "TEST_ENV": 0,
   "BUFFER_SIZE": 400
 }
