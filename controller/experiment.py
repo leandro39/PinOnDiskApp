@@ -12,7 +12,7 @@ class Ensayo(QtCore.QObject):
     
     experimentEnd = QtCore.pyqtSignal()
 
-    def __init__(self, name, dist, radio, carga, puertoCelda, serialArduino, TEST_ENV, parent=None):
+    def __init__(self, name, dist, radio, carga, puertoCelda, serialArduino, TEST_ENV, metadata, parent=None):
         super(self.__class__, self).__init__(parent)
         
         self._name = name
@@ -26,6 +26,7 @@ class Ensayo(QtCore.QObject):
         self.isRunning = False
         self._stopThreads = False
         self.TEST_ENV = TEST_ENV
+        self.metadata = metadata
         
 
     def getDistancia(self):
@@ -231,16 +232,16 @@ class Ensayo(QtCore.QObject):
             today = time.strftime('%d/%m/%y', localtime)
             now = time.strftime('%H:%M:%S', localtime)
             csv_out.writerow(['Fecha', today, now])
-            csv_out.writerow(['Operador', 'Test'])
-            csv_out.writerow(['Probeta', 'Test'])
-            csv_out.writerow(['Material', 'Test'])
-            csv_out.writerow(['Dureza', 'Test'])
-            csv_out.writerow(['Tratamiento', 'Test'])
+            csv_out.writerow(['Operador', self.metadata['operario']])
+            csv_out.writerow(['Probeta1', self.metadata['probeta']])
+            csv_out.writerow(['Material', self.metadata['material']])
+            csv_out.writerow(['Dureza', self.metadata['dureza']])
+            csv_out.writerow(['Tratamiento', self.metadata['tratamiento']])
             csv_out.writerow(['Radio', self._radio])
             csv_out.writerow(['Distancia', self._distancia])
             csv_out.writerow(['Carga', self._cargaExperimento])
-            csv_out.writerow(['Bolilla', 'Test'])
-            csv_out.writerow(['Diametro', 'Test'])
+            csv_out.writerow(['Bolilla', self.metadata['bolilla']])
+            csv_out.writerow(['Diametro', self.metadata['diametro']])
             csv_out.writerow(['fuerza[kg]','distancia[m]', 'tiempo[s]', 'temperatura[°C]', 'humedad[%]'])
             self._out.flush()
 

@@ -6,6 +6,7 @@ import json
 import csv
 import queue
 import time
+import datetime
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from views.PinOnDiskMain import Ui_MainWindow
@@ -23,11 +24,20 @@ ICON_RED_LED = '.\\views\\icons\\led-red-on.png'
 ICON_GREEN_LED = '.\\views\\icons\\green-led-on.png'
 
 #Load configs
-with open('configs.json', 'r') as f:
-    configs = json.loads(f.read())
-    TEST_ENV = configs['TEST_ENV']
-    BUFFER_SIZE = configs['BUFFER_SIZE']
-    COMPORT_CELDA = configs['COMPORT_CELDA']
+try:
+    with open('configs.json', 'r') as f:
+        configs = json.loads(f.read())
+        TEST_ENV = configs['TEST_ENV']
+        BUFFER_SIZE = configs['BUFFER_SIZE']
+        COMPORT_CELDA = configs['COMPORT_CELDA']
+        DEFAULT_PATH = configs['DEFAULT_PATH']
+
+except Exception as e:
+    msgBox = QtWidgets.QMessageBox()
+    msgBox.setIcon(QtWidgets.QMessageBox.Critical)
+    msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
+    msgBox.setWindowTitle('Error')
+    msgBox.exec_()
 
 class PinOnDiskApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -41,17 +51,18 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.serial_ports = serial_tools.get_serial_ports()
         self.ui.portCombo.addItems(self.serial_ports)
         self.ui.radioCombo.addItems(['5','6','7'])
+        self.ui.pathInput.setText(DEFAULT_PATH.replace('/', '\\'))
         self.ui.labelNotConnected.setPixmap(QtGui.QPixmap(ICON_RED_LED))
         self.ui.labelNotConnected.show()
         self.ui.labelConnected.setPixmap(QtGui.QPixmap(ICON_GREEN_LED))
         self.ui.labelConnected.hide()
         self.ui.progressLabel.setVisible(False)
-        
+        self.ui.estimatedEndLabel.setVisible(False)
         self.validator = QtGui.QIntValidator()
         self.validator.setBottom(0)
         self.ui.distanciaInput.setValidator(self.validator)
         self.ui.cargaInput.setValidator(self.validator)
-
+        #self.ui.groupBox.
         self.isConnected = False
         self.ser = serial.Serial()
                 
@@ -76,6 +87,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         
         if self.isConnected:
             self.ui.groupBox.setEnabled(True)
+            self.ui.groupBox_2.setEnabled(True)
             self.ui.testBtn.setEnabled(True)
             self.ui.labelNotConnected.hide()
             self.ui.labelConnected.show()
@@ -83,6 +95,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
         else:
             self.ui.groupBox.setEnabled(False)
+            self.ui.groupBox_2.setEnabled(False)
             self.ui.conectarBtn.setEnabled(True)
             self.ui.pauseBtn.setEnabled(False)
             self.ui.stopBtn.setEnabled(False)
@@ -93,15 +106,34 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             self.ui.conectarBtn.setText("Conectar")
   
     def pathBrowseBtn_ClickedEvent(self):
-        self.ui.pathInput.setText(str(QtWidgets.QFileDialog.getExistingDirectory(self, "Elija una carpeta en donde guardar los datos del experimento")))
+        self.ui.pathInput.setText(str(QtWidgets.QFileDialog.getExistingDirectory(self, "Elija una carpeta en donde guardar los datos del experimento", DEFAULT_PATH)))
 
     #Chequeo que los inputs no esten vacios antes de habilitar el ensayo
     def onTextChanged(self):
         self.ui.startBtn.setEnabled(bool(self.ui.experimentNameInput.text()) and bool(self.ui.pathInput.text()) and bool(self.ui.distanciaInput.text() and bool(self.ui.cargaInput.text())))
                 
     def startBtn_ClickedEvent(self):
-        #Creo nuevo ensayo
-        self.ensayo = Ensayo(self.ui.experimentNameInput.text(), self.ui.distanciaInput.text(), self.ui.radioCombo.currentText(), self.ui.cargaInput.text(), COMPORT_CELDA, self.ser, TEST_ENV)
+        # Collect metadata
+        metadata = {
+            'operario': self.ui.operarioInput.text(),
+            'probeta': self.ui.probetaInput.text(),
+            'material': self.ui.materialInput.text(),
+            'dureza': self.ui.durezaInput.text(),
+            'tratamiento': self.ui.tratamientoInput.text(),
+            'bolilla': self.ui.bolillaInput.text(),
+            'diametro': self.ui.diametroBolillaInput.text()
+        }
+        
+        # Creo nuevo ensayo
+        self.ensayo = Ensayo(self.ui.experimentNameInput.text(), 
+                                self.ui.distanciaInput.text(), 
+                                self.ui.radioCombo.currentText(), 
+                                self.ui.cargaInput.text(), 
+                                COMPORT_CELDA, 
+                                self.ser, 
+                                TEST_ENV,
+                                metadata)
+        
         self.ensayo.setSavePath(self.pathParser())
         self.ui.pauseBtn.setEnabled(False)
         self.ui.stopBtn.setEnabled(True)
@@ -114,6 +146,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.conectarBtn.setEnabled(False)
         self.ui.portCombo.setEnabled(False)
         self.ui.testBtn.setEnabled(False)
+        self.ui.groupBox_2.setEnabled(False)
         self.ensayo.empezar()
         self.ensayo.experimentEnd.connect(self.onExperimentEnd)
         
@@ -130,6 +163,12 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.progress.currentVueltas.connect(self.onVueltasChanged)
         self.ui.progressLabel.setVisible(True)
         self.progress.start()
+
+        # Estimated finish time
+        duration = datetime.timedelta(seconds=(int(self.ui.distanciaInput.text())/0.1))
+        endTime = datetime.datetime.now() + duration
+        self.ui.estimatedEndLabel.setText('Finaliza: ' + endTime.strftime('%H:%M'))
+        self.ui.estimatedEndLabel.setVisible(True)
         
     def stopBtn_ClickedEvent(self):
         confirm = QtWidgets.QMessageBox.question(self,'Detener ensayo', "¿Está seguro que desea detener el experimento?",QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
@@ -170,22 +209,24 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.conectarBtn.setEnabled(True)
         self.ui.portCombo.setEnabled(True)
         self.ui.testBtn.setEnabled(True)
+        self.ui.groupBox_2.setEnabled(True)
         self.ui.progressBar.setValue(self.ui.progressBar.maximum())
         self.ui.progressLabel.setText('{targetVueltas} vueltas de {targetVueltas}'.format(targetVueltas=int(self.ensayo.getVueltasTarget())))
         self.progress.killThread = True
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
+        self.ui.estimatedEndLabel.setText('Ensayo finalizado')
         
         
         # ONLY DEBUG
-        if (TEST_ENV):
-            time.sleep(2)
-            print('Celda thread is alive: {t1}'.format(t1=self.ensayo.t1.is_alive()))
-            print('Controller thread is alive: {t2}'.format(t2=self.ensayo.t2.is_alive()))
-            print('Data writer thread: {t3}'.format(t3=self.ensayo.t3.is_alive()))
-            print('Temp y humedad thread is alive : {t6}'.format(t6=self.ensayo.t6.is_alive()))
-            print('Plotter thread is alive: {t}'.format(t=self.plot.t.is_alive()))
-            print('Progress bar updater thread is alive: {t}'.format(t=self.progress.isRunning()))
+        # if (TEST_ENV):
+        #     time.sleep(2)
+        #     print('Celda thread is alive: {t1}'.format(t1=self.ensayo.t1.is_alive()))
+        #     print('Controller thread is alive: {t2}'.format(t2=self.ensayo.t2.is_alive()))
+        #     print('Data writer thread: {t3}'.format(t3=self.ensayo.t3.is_alive()))
+        #     print('Temp y humedad thread is alive : {t6}'.format(t6=self.ensayo.t6.is_alive()))
+        #     print('Plotter thread is alive: {t}'.format(t=self.plot.t.is_alive()))
+        #     print('Progress bar updater thread is alive: {t}'.format(t=self.progress.isRunning()))
 
 
 class ProgressBarUpdater(QtCore.QThread):
@@ -212,7 +253,7 @@ class ProgressBarUpdater(QtCore.QThread):
 class Plotter(QtWidgets.QDialog):
     def __init__(self, r, d, c, ensayo = None, test = 'Experimento', parent=None):
         super(Plotter, self).__init__(parent)
-        self.setWindowFlags((self.windowFlags() ^ QtCore.Qt.WindowContextHelpButtonHint) | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
+        self.setWindowFlags((self.windowFlags() ^ (QtCore.Qt.WindowContextHelpButtonHint )) | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
         self.setWindowTitle("Ensayo")
         self.setStyleSheet("QWidget { background-color: #ffffff; }")
         self.canvas = FigureCanvas(Figure(figsize=(10,6)))
@@ -269,6 +310,12 @@ class Plotter(QtWidgets.QDialog):
         
             except queue.Empty:
                 pass
+    
+    def closeEvent(self, event):
+        if (self.t.is_alive()):
+            event.ignore()
+        else:
+            super(Plotter, self).closeEvent(event)
 
 
 if __name__ == "__main__":
