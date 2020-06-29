@@ -186,7 +186,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         # Estimated finish time
         duration = datetime.timedelta(seconds=(int(self.ui.distanciaInput.text())/0.1))
         endTime = datetime.datetime.now() + duration
-        self.ui.estimatedEndLabel.setText('Finaliza: ' + endTime.strftime('%H:%M'))
+        self.ui.estimatedEndLabel.setText('Finaliza: ' + endTime.strftime('%H:%M') + " hs.")
         self.ui.estimatedEndLabel.setVisible(True)
         
     def stopBtn_ClickedEvent(self):
