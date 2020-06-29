@@ -159,66 +159,72 @@ class Ensayo(QtCore.QObject):
             msgBox.exec_()
   
     def __celdaListener(self):
-        try:
-            while True:
-                if self._stopThreads:
-                    self._serialCelda.close()
-                    break
-                celda = self._serialCelda.readline()
-                if not (celda == b""):
-                    if (self.TEST_ENV):
-                        celda = celda.decode('ascii').strip()[8:13]
-                    else:
-                        celda = celda.decode('ascii').strip()[4:9]  #Parse poco prolijo para test
-                    # print('Celda: ' + celda)
-                    self._celdaQ.put(celda)  
-                    self._dataEvent.set()
         
-        except Exception as e:
-            msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Critical)
-            msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
-            msgBox.setWindowTitle('Error')
-            msgBox.exec_()
+            while True:
+                try:
+                    if self._stopThreads:
+                        self._serialCelda.close()
+                        break
+                    celda = self._serialCelda.readline()
+                    if not (celda == b""):
+                        if (self.TEST_ENV):
+                            celda = celda.decode('ascii').strip()[8:13]
+                        else:
+                            celda = celda.decode('ascii').strip()[4:9]  #Parse poco prolijo para test
+                        # print('Celda: ' + celda)
+                        self._celdaQ.put(celda)  
+                        self._dataEvent.set()
+        
+                except Exception as e:
+                    msgBox = QMessageBox()
+                    msgBox.setIcon(QMessageBox.Critical)
+                    msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
+                    msgBox.setWindowTitle('Error')
+                    msgBox.exec_()
 
     def __controllerListener(self):
-        try:
             while True:
-                if self._stopThreads:
-                    self.experimentEnd.emit()
-                    break
-                self._dataEvent.wait(1.5)
-                if (self._dataEvent.isSet() and not self._celdaQ.empty()):
-                    self._lock.acquire()
-                    if (self.TEST_ENV):
-                        self._serialArduino.write(b'<SEND>\n')
-                    else:
-                        self._serialArduino.write(b'<SEND>')
-                    answer = self._serialArduino.readline().decode('ascii').strip()
-                    # print('Arduino: ' + answer)
-                    self._lock.release()
-                    if (answer == "-1"):
-                        self._stopThreads = True
-                        self._dataEvent.clear()
-                        self.isRunning = False
+                try:
+                    if self._stopThreads:
                         self.experimentEnd.emit()
                         break
-                    else:
-                        vueltas = float(answer)
-                        self.progressBarQ.put(vueltas)
-                        self._distQ.put("{:10.2f}".format(vueltas*2*pi*self._radio*0.001).strip())
-                        self._dataEvent.clear()
-                        self._dataReady.set()
-                    
-                    if (self._stopExperiment == True):
-                        self.__stopExperiment()
+                    self._dataEvent.wait(1.5)
+                    if (self._dataEvent.isSet() and not self._celdaQ.empty()):
+                        self._lock.acquire()
+                        if (self.TEST_ENV):
+                            self._serialArduino.write(b'<SEND>\n')
+                        else:
+                            self._serialArduino.write(b'<SEND>')
+                        answer = self._serialArduino.readline().decode('ascii').strip()
+                        # print('Arduino: ' + answer)
+                        self._lock.release()
+                        if (answer == "-1"):
+                            self._stopThreads = True
+                            self._dataEvent.clear()
+                            self.isRunning = False
+                            self.experimentEnd.emit()
+                            break
+                        else:
+                            vueltas = float(answer)
+                            self.progressBarQ.put(vueltas)
+                            self._distQ.put("{:10.2f}".format(vueltas*2*pi*self._radio*0.001).strip())
+                            self._dataEvent.clear()
+                            self._dataReady.set()
+                        
+                        if (self._stopExperiment == True):
+                            self.__stopExperiment()
         
-        except Exception as e:
-            msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Critical)
-            msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
-            msgBox.setWindowTitle('Error')
-            msgBox.exec_()
+                except serial.SerialTimeoutException:
+                    print('Buffer full? timeout exception')
+                    if (self._lock.locked()):
+                        self._serialArduino.reset_output_buffer()
+                        self._lock.release()
+                except Exception as e:
+                    msgBox = QMessageBox()
+                    msgBox.setIcon(QMessageBox.Critical)
+                    msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
+                    msgBox.setWindowTitle('Error')
+                    msgBox.exec_()
 
     def __dataWriter(self):
         try:
@@ -279,32 +285,40 @@ class Ensayo(QtCore.QObject):
 
     
     def __requestTemperatureAndHumidity(self):
-        try:
             timer = 60
             while True:
-                if self._stopThreads:
-                    
-                    break
-                if (timer == 60):
-                    self._lock.acquire()
-                    if (self.TEST_ENV):
-                        self._serialArduino.write(b'<TMHM>\n')
+                try:
+                    if self._stopThreads:
+                        
+                        break
+                    if (timer == 60):
+                        self._lock.acquire()
+                        if (self.TEST_ENV):
+                            self._serialArduino.write(b'<TMHM>\n')
+                        else:
+                            self._serialArduino.write(b'<TMHM>')
+                        
+                        humedad = self._serialArduino.readline().decode('ascii').strip()
+                        temperatura = self._serialArduino.readline().decode('ascii').strip()
+                        self._lock.release()
+                        self._tyhQ.put((temperatura, humedad))
+                        timer = 0
+                    time.sleep(1)
+                    timer += 1
+                
+                except serial.SerialTimeoutException:
+                    print('Buffer full? timeout exception')
+                    if (self._lock.locked()):
+                        self._serialArduino.reset_output_buffer()
+                        self._lock.release()
                     else:
-                        self._serialArduino.write(b'<TMHM>')
-                    
-                    humedad = self._serialArduino.readline().decode('ascii').strip()
-                    temperatura = self._serialArduino.readline().decode('ascii').strip()
-                    self._lock.release()
-                    self._tyhQ.put((temperatura, humedad))
-                    # print('Temperatura: ' + temperatura)
-                    # print('Humedad: ' + humedad)
-                    timer = 0
-                time.sleep(1)
-                timer += 1
-        except Exception as e:
-            msgBox = QMessageBox()
-            msgBox.setIcon(QMessageBox.Critical)
-            msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
-            msgBox.setWindowTitle('Error')
-            msgBox.exec_()
+                        self._lock.acquire()
+                        self._serialArduino.reset_output_buffer()
+                        self._lock.release()
+                except Exception as e:
+                    msgBox = QMessageBox()
+                    msgBox.setIcon(QMessageBox.Critical)
+                    msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
+                    msgBox.setWindowTitle('Error')
+                    msgBox.exec_()
 

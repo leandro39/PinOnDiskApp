@@ -81,12 +81,14 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.stopBtn.clicked.connect(self.stopBtn_ClickedEvent)
         self.ui.testBtn.clicked.connect(self.testBtn_ClickedEvent)
         self.ui.bolillaCombo.currentIndexChanged.connect(self.bolillaCombo_currentTextChanged)
+        self.ui.bolillaCombo.currentIndexChanged.connect(self.setExperimentName)
         self.ui.probetaInput.textChanged.connect(self.setExperimentName)
         self.ui.operarioInput.textChanged.connect(self.onTextChanged)
         self.ui.probetaInput.textChanged.connect(self.onTextChanged)
         self.ui.materialInput.textChanged.connect(self.onTextChanged)
         self.ui.durezaInput.textChanged.connect(self.onTextChanged)
         self.ui.tratamientoInput.textChanged.connect(self.onTextChanged)
+
 
     #Button events
     def conectarBtn_ClickedEvent(self):
@@ -200,6 +202,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
     
     def bolillaCombo_currentTextChanged(self):
         self.ui.diametroBolillaInput.setText(DIAM_BOLILLAS[BOLILLAS.index(self.ui.bolillaCombo.currentText())])
+        
     
     def setExperimentName(self):
         if (bool(self.ui.probetaInput.text()) and bool(self.ui.distanciaInput.text()) and bool(self.ui.cargaInput.text())):
@@ -234,7 +237,6 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.pauseBtn.setEnabled(False)
         self.ui.stopBtn.setEnabled(False)
         self.ui.startBtn.setEnabled(True)
-        self.ui.experimentNameInput.setEnabled(True)
         self.ui.cargaInput.setEnabled(True)
         self.ui.radioCombo.setEnabled(True)
         self.ui.distanciaInput.setEnabled(True)
