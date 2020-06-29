@@ -24,23 +24,15 @@ ICON_RED_LED = '.\\views\\icons\\led-red-on.png'
 ICON_GREEN_LED = '.\\views\\icons\\green-led-on.png'
 
 #Load configs
-try:
-    with open('configs.json', 'r') as f:
-        configs = json.loads(f.read())
-        TEST_ENV = configs['TEST_ENV']
-        BUFFER_SIZE = configs['BUFFER_SIZE']
-        COMPORT_CELDA = configs['COMPORT_CELDA']
-        COMPORT_CONTROLLER_PREFERRED = configs['COMPORT_CONTROLLER_PREFERRED']
-        DEFAULT_PATH = configs['DEFAULT_PATH']
-        BOLILLAS = [i for i in configs['BOLILLAS']]
-        DIAM_BOLILLAS = [configs['BOLILLAS'][i] for i in BOLILLAS]
-
-except Exception as e:
-    msgBox = QtWidgets.QMessageBox()
-    msgBox.setIcon(QtWidgets.QMessageBox.Critical)
-    msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
-    msgBox.setWindowTitle('Error')
-    msgBox.exec_()
+with open('configs.json', 'r') as f:
+    configs = json.loads(f.read())
+    TEST_ENV = configs['TEST_ENV']
+    BUFFER_SIZE = configs['BUFFER_SIZE']
+    COMPORT_CELDA = configs['COMPORT_CELDA']
+    COMPORT_CONTROLLER_PREFERRED = configs['COMPORT_CONTROLLER_PREFERRED']
+    DEFAULT_PATH = configs['DEFAULT_PATH']
+    BOLILLAS = [i for i in configs['BOLILLAS']]
+    DIAM_BOLILLAS = [configs['BOLILLAS'][i] for i in BOLILLAS]
 
 class PinOnDiskApp(QtWidgets.QMainWindow):
     def __init__(self):
