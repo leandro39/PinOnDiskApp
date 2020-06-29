@@ -779,7 +779,7 @@
            <string notr="true">font-size: 13px;</string>
           </property>
           <property name="text">
-           <string>Dureza</string>
+           <string>Dureza (HV)</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -847,7 +847,7 @@
            <string notr="true">font-size: 13px;</string>
           </property>
           <property name="text">
-           <string>Diámetro de la bolilla</string>
+           <string>Diámetro de la bolilla (mm)</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
