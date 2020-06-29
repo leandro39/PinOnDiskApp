@@ -472,7 +472,7 @@
         <rect>
          <x>8</x>
          <y>24</y>
-         <width>485</width>
+         <width>469</width>
          <height>353</height>
         </rect>
        </property>
@@ -496,6 +496,9 @@
         </item>
         <item>
          <widget class="QLineEdit" name="experimentNameInput">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="styleSheet">
            <string notr="true">font-size: 13px;</string>
           </property>
@@ -692,7 +695,7 @@
            <string notr="true">font-size: 13px;</string>
           </property>
           <property name="text">
-           <string>Operarador</string>
+           <string>Operador</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
@@ -836,17 +839,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="bolillaInput">
-          <property name="styleSheet">
-           <string notr="true">font-size: 13px;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="placeholderText">
-           <string>Bolilla</string>
-          </property>
-         </widget>
+         <widget class="QComboBox" name="bolillaCombo"/>
         </item>
         <item>
          <widget class="QLabel" name="label_16">

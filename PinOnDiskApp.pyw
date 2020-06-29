@@ -30,7 +30,10 @@ try:
         TEST_ENV = configs['TEST_ENV']
         BUFFER_SIZE = configs['BUFFER_SIZE']
         COMPORT_CELDA = configs['COMPORT_CELDA']
+        COMPORT_CONTROLLER_PREFERRED = configs['COMPORT_CONTROLLER_PREFERRED']
         DEFAULT_PATH = configs['DEFAULT_PATH']
+        BOLILLAS = [i for i in configs['BOLILLAS']]
+        DIAM_BOLILLAS = [configs['BOLILLAS'][i] for i in BOLILLAS]
 
 except Exception as e:
     msgBox = QtWidgets.QMessageBox()
@@ -50,7 +53,13 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.setupUi(self)
         self.serial_ports = serial_tools.get_serial_ports()
         self.ui.portCombo.addItems(self.serial_ports)
+
+        if (self.ui.portCombo.findText(COMPORT_CONTROLLER_PREFERRED) != -1):
+            self.ui.portCombo.setCurrentIndex(self.ui.portCombo.findText(COMPORT_CONTROLLER_PREFERRED))
         self.ui.radioCombo.addItems(['5','6','7'])
+        self.ui.bolillaCombo.addItems([bolilla for bolilla in BOLILLAS])
+        self.ui.diametroBolillaInput.setEnabled(False)
+        self.ui.diametroBolillaInput.setText(DIAM_BOLILLAS[BOLILLAS.index(self.ui.bolillaCombo.currentText())])
         self.ui.pathInput.setText(DEFAULT_PATH.replace('/', '\\'))
         self.ui.labelNotConnected.setPixmap(QtGui.QPixmap(ICON_RED_LED))
         self.ui.labelNotConnected.show()
@@ -62,7 +71,8 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.validator.setBottom(0)
         self.ui.distanciaInput.setValidator(self.validator)
         self.ui.cargaInput.setValidator(self.validator)
-        #self.ui.groupBox.
+        self.ui.experimentNameInput.setEnabled(False)
+
         self.isConnected = False
         self.ser = serial.Serial()
                 
@@ -70,13 +80,22 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.conectarBtn.clicked.connect(self.conectarBtn_ClickedEvent)
         self.ui.pathBrowseBtn.clicked.connect(self.pathBrowseBtn_ClickedEvent)
         self.ui.distanciaInput.textChanged.connect(self.onTextChanged)
+        self.ui.distanciaInput.textChanged.connect(self.setExperimentName)
         self.ui.experimentNameInput.textChanged.connect(self.onTextChanged)
         self.ui.pathInput.textChanged.connect(self.onTextChanged)
         self.ui.cargaInput.textChanged.connect(self.onTextChanged)
+        self.ui.cargaInput.textChanged.connect(self.setExperimentName)
         self.ui.startBtn.clicked.connect(self.startBtn_ClickedEvent)
         self.ui.stopBtn.clicked.connect(self.stopBtn_ClickedEvent)
         self.ui.testBtn.clicked.connect(self.testBtn_ClickedEvent)
-        
+        self.ui.bolillaCombo.currentIndexChanged.connect(self.bolillaCombo_currentTextChanged)
+        self.ui.probetaInput.textChanged.connect(self.setExperimentName)
+        self.ui.operarioInput.textChanged.connect(self.onTextChanged)
+        self.ui.probetaInput.textChanged.connect(self.onTextChanged)
+        self.ui.materialInput.textChanged.connect(self.onTextChanged)
+        self.ui.durezaInput.textChanged.connect(self.onTextChanged)
+        self.ui.tratamientoInput.textChanged.connect(self.onTextChanged)
+
     #Button events
     def conectarBtn_ClickedEvent(self):
 
@@ -110,7 +129,15 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
     #Chequeo que los inputs no esten vacios antes de habilitar el ensayo
     def onTextChanged(self):
-        self.ui.startBtn.setEnabled(bool(self.ui.experimentNameInput.text()) and bool(self.ui.pathInput.text()) and bool(self.ui.distanciaInput.text() and bool(self.ui.cargaInput.text())))
+        self.ui.startBtn.setEnabled(
+            bool(self.ui.experimentNameInput.text()) and 
+            bool(self.ui.pathInput.text()) and 
+            bool(self.ui.distanciaInput.text()) and 
+            bool(self.ui.cargaInput.text()) and
+            bool(self.ui.probetaInput.text()) and
+            bool(self.ui.materialInput.text()) and 
+            bool(self.ui.durezaInput.text()) and
+            bool(self.ui.tratamientoInput.text()))
                 
     def startBtn_ClickedEvent(self):
         # Collect metadata
@@ -120,7 +147,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             'material': self.ui.materialInput.text(),
             'dureza': self.ui.durezaInput.text(),
             'tratamiento': self.ui.tratamientoInput.text(),
-            'bolilla': self.ui.bolillaInput.text(),
+            'bolilla': self.ui.bolillaCombo.currentText(),
             'diametro': self.ui.diametroBolillaInput.text()
         }
         
@@ -177,6 +204,20 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             self.ui.startBtn.setEnabled(True)
             self.ui.pauseBtn.setEnabled(False)
             self.ui.stopBtn.setEnabled(False)
+    
+    
+    def bolillaCombo_currentTextChanged(self):
+        self.ui.diametroBolillaInput.setText(DIAM_BOLILLAS[BOLILLAS.index(self.ui.bolillaCombo.currentText())])
+    
+    def setExperimentName(self):
+        if (bool(self.ui.probetaInput.text()) and bool(self.ui.distanciaInput.text()) and bool(self.ui.cargaInput.text())):
+            self.ui.experimentNameInput.setText('{probeta} R{radio} {distancia}m {carga}N {bolilla}'.format(
+                probeta=self.ui.probetaInput.text(), 
+                radio=self.ui.radioCombo.currentText(), 
+                distancia=self.ui.distanciaInput.text(), 
+                carga=self.ui.cargaInput.text(), 
+                bolilla=self.ui.bolillaCombo.currentText())
+            )
 
     def pathParser(self):
         return self.ui.pathInput.text().replace('/', '\\')

@@ -233,7 +233,7 @@ class Ensayo(QtCore.QObject):
             now = time.strftime('%H:%M:%S', localtime)
             csv_out.writerow(['Fecha', today, now])
             csv_out.writerow(['Operador', self.metadata['operario']])
-            csv_out.writerow(['Probeta1', self.metadata['probeta']])
+            csv_out.writerow(['Probeta', self.metadata['probeta']])
             csv_out.writerow(['Material', self.metadata['material']])
             csv_out.writerow(['Dureza', self.metadata['dureza']])
             csv_out.writerow(['Tratamiento', self.metadata['tratamiento']])
