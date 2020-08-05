@@ -7,14 +7,15 @@ from threading import Event, Lock, Thread
 import serial
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QMessageBox
+import logconfig
 
 class Ensayo(QtCore.QObject):
     
     experimentEnd = QtCore.pyqtSignal()
 
     def __init__(self, name, dist, radio, carga, puertoCelda, serialArduino, TEST_ENV, metadata, parent=None):
-        super(self.__class__, self).__init__(parent)
-        
+        super(self.__class__, self).__init__(parent) 
+        self.logger = logconfig.configLogger('Controlador') 
         self._name = name
         self._distancia = int(dist)
         self._radio = int(radio)
@@ -28,6 +29,19 @@ class Ensayo(QtCore.QObject):
         self.TEST_ENV = TEST_ENV
         self.metadata = metadata
         
+    def reinit(self,name, dist, radio, carga, puertoCelda, serialArduino, TEST_ENV, metadata):
+        self._name = name
+        self._distancia = int(dist)
+        self._radio = int(radio)
+        self._vueltasTarget = int((self._distancia*1000)/(2*pi*self._radio))
+        self._cargaExperimento = int(carga)
+        self._puertoCelda = puertoCelda
+        self._serialArduino = serialArduino
+        self._serialCelda = serial.Serial()
+        self.isRunning = False
+        self._stopThreads = False
+        self.TEST_ENV = TEST_ENV
+        self.metadata = metadata
 
     def getDistancia(self):
         return self._distancia
@@ -51,7 +65,8 @@ class Ensayo(QtCore.QObject):
 
             if not (self._serialCelda.is_open):
                 raise Exception('Error en puerto serial de celda de carga')
-
+                
+            self.logger.debug('Comenzando experimento')
             #Init variables de experimento
             self.data = []
             self.tempHumedad = (0,0)
@@ -70,12 +85,14 @@ class Ensayo(QtCore.QObject):
             self._serialArduino.reset_output_buffer()
             
             if (self.TEST_ENV):
+                self.logger.debug('Estableciendo comuncacion con el controlador: <STAR,{radio},{vueltasTarget}\n>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget))
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>\n'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             else:
+                self.logger.debug('Estableciendo comuncacion con el controlador: <STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget))
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             
             response = self._serialArduino.readline().decode('ascii').strip()
-            # print(response)
+            self.logger.debug('Respuesta del controlador: {response}'.format(response=response))
             
             if not (response == "0"):
                 raise Exception('Error en comunicacion con controlador')
@@ -100,6 +117,7 @@ class Ensayo(QtCore.QObject):
             msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
             msgBox.setWindowTitle('Error')
             msgBox.exec_()
+            self.logger.exception('Error configurando el experimento')
 
     def pausar(self):
         pass
@@ -108,15 +126,18 @@ class Ensayo(QtCore.QObject):
         self._stopExperiment = True #Raise flag to stop experiment in a clean way
     
     @staticmethod
-    def test(port, TEST_ENV):
+    def test(port, TEST_ENV, logger):
+
         try:
             if (TEST_ENV):
+                logger.debug('Comando: <TEST>\n')
                 port.write(b'<TEST>\n')
             else:    
+                logger.debug('Comando: <TEST>')
                 port.write(b'<TEST>')
             
             answer = port.readline().decode('ascii').strip()
-            # print(answer)
+            logger.debug('Respuesta controlador: {answer}'.format(answer=answer))
             if (answer == '0'):
                 return 1
             
@@ -131,6 +152,7 @@ class Ensayo(QtCore.QObject):
             msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
             msgBox.setWindowTitle('Error')
             msgBox.exec_()
+            logger.exception('Error en alineacion de experimento')
     
     
     def __stopExperiment(self):
@@ -138,14 +160,14 @@ class Ensayo(QtCore.QObject):
             if (self.isRunning):
                 self._lock.acquire()
                 if (self.TEST_ENV):
+                    self.logger.debug('Comando: <STOP>\n')
                     self._serialArduino.write(b'<STOP>\n')
                 else:
                     self._serialArduino.write(b'<STOP>')
                 answer = self._serialArduino.readline().decode('ascii').strip()
-                # print(answer)
+                self.logger.debug('Respuesta: {answer}'.format(answer=answer))
                 self._lock.release()
                 if (answer == "-1"):
-                    # print(answer)
                     self._lock.acquire()
                     self._stopThreads = True
                     self._lock.release()
@@ -157,9 +179,9 @@ class Ensayo(QtCore.QObject):
             msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
             msgBox.setWindowTitle('Error')
             msgBox.exec_()
+            self.logger.exception('Error deteniendo el experimento')
   
     def __celdaListener(self):
-        
             while True:
                 try:
                     if self._stopThreads:
@@ -181,6 +203,7 @@ class Ensayo(QtCore.QObject):
                     msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
                     msgBox.setWindowTitle('Error')
                     msgBox.exec_()
+                    self.logger.exception('Error en listener de celda')
 
     def __controllerListener(self):
             while True:
@@ -203,6 +226,7 @@ class Ensayo(QtCore.QObject):
                             self._dataEvent.clear()
                             self.isRunning = False
                             self.experimentEnd.emit()
+                            self.logger.debug('Ensayo terminado. Controlador: {answer}'.format(answer=answer))
                             break
                         else:
                             vueltas = float(answer)
@@ -215,7 +239,7 @@ class Ensayo(QtCore.QObject):
                             self.__stopExperiment()
         
                 except serial.SerialTimeoutException:
-                    print('Buffer full? timeout exception')
+                    self.logger.debug('Serial timeout exception. Buffer full?')
                     if (self._lock.locked()):
                         self._serialArduino.reset_output_buffer()
                         self._lock.release()
@@ -225,6 +249,7 @@ class Ensayo(QtCore.QObject):
                     msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
                     msgBox.setWindowTitle('Error')
                     msgBox.exec_()
+                    self.logger.exception('Error en listener del controlador')
 
     def __dataWriter(self):
         try:
@@ -278,7 +303,7 @@ class Ensayo(QtCore.QObject):
                         msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
                         msgBox.setWindowTitle('Error')
                         msgBox.exec_()
-                    
+                        self.logger.exception('Error en data writer')
         finally:
             self._out.flush()
             self._out.close()
@@ -307,7 +332,7 @@ class Ensayo(QtCore.QObject):
                     timer += 1
                 
                 except serial.SerialTimeoutException:
-                    print('Buffer full? timeout exception')
+                    self.logger.exception('Buffer full? timeout exception')
                     if (self._lock.locked()):
                         self._serialArduino.reset_output_buffer()
                         self._lock.release()
@@ -321,4 +346,5 @@ class Ensayo(QtCore.QObject):
                     msgBox.setText('Error: ' + str(type(e)) + '\n'  + str(e))
                     msgBox.setWindowTitle('Error')
                     msgBox.exec_()
+                    self.logger.exception('Error en temperatura y humedad listener')
 

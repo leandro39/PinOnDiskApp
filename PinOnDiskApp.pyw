@@ -20,8 +20,11 @@ from matplotlib.ticker import FormatStrFormatter
 from matplotlib.figure import Figure
 import numpy as np
 
+import logconfig
+
 ICON_RED_LED = '.\\views\\icons\\led-red-on.png'
 ICON_GREEN_LED = '.\\views\\icons\\green-led-on.png'
+logger = logconfig.configLogger('main')
 
 #Load configs
 with open('configs.json', 'r') as f:
@@ -34,10 +37,11 @@ with open('configs.json', 'r') as f:
     BOLILLAS = [i for i in configs['BOLILLAS']]
     DIAM_BOLILLAS = [configs['BOLILLAS'][i] for i in BOLILLAS]
 
+
 class PinOnDiskApp(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.ensayo = None
         #Create main window
         self.ui = Ui_MainWindow()
         self.dialogs = list()           
@@ -83,6 +87,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.bolillaCombo.currentIndexChanged.connect(self.bolillaCombo_currentTextChanged)
         self.ui.bolillaCombo.currentIndexChanged.connect(self.setExperimentName)
         self.ui.probetaInput.textChanged.connect(self.setExperimentName)
+        self.ui.radioCombo.currentIndexChanged.connect(self.setExperimentName)
         self.ui.operarioInput.textChanged.connect(self.onTextChanged)
         self.ui.probetaInput.textChanged.connect(self.onTextChanged)
         self.ui.materialInput.textChanged.connect(self.onTextChanged)
@@ -134,63 +139,78 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             bool(self.ui.tratamientoInput.text()))
                 
     def startBtn_ClickedEvent(self):
-        # Collect metadata
-        metadata = {
-            'operario': self.ui.operarioInput.text(),
-            'probeta': self.ui.probetaInput.text(),
-            'material': self.ui.materialInput.text(),
-            'dureza': self.ui.durezaInput.text(),
-            'tratamiento': self.ui.tratamientoInput.text(),
-            'bolilla': self.ui.bolillaCombo.currentText(),
-            'diametro': self.ui.diametroBolillaInput.text()
-        }
-        
-        # Creo nuevo ensayo
-        self.ensayo = Ensayo(self.ui.experimentNameInput.text(), 
-                                self.ui.distanciaInput.text(), 
-                                self.ui.radioCombo.currentText(), 
-                                self.ui.cargaInput.text(), 
-                                COMPORT_CELDA, 
-                                self.ser, 
-                                TEST_ENV,
-                                metadata)
-        
-        self.ensayo.setSavePath(self.pathParser())
-        self.ui.pauseBtn.setEnabled(False)
-        self.ui.stopBtn.setEnabled(True)
-        self.ui.startBtn.setEnabled(False)
-        self.ui.experimentNameInput.setEnabled(False)
-        self.ui.cargaInput.setEnabled(False)
-        self.ui.radioCombo.setEnabled(False)
-        self.ui.distanciaInput.setEnabled(False)
-        self.ui.pathBrowseBtn.setEnabled(False)
-        self.ui.conectarBtn.setEnabled(False)
-        self.ui.portCombo.setEnabled(False)
-        self.ui.testBtn.setEnabled(False)
-        self.ui.groupBox_2.setEnabled(False)
-        self.ensayo.empezar()
-        self.ensayo.experimentEnd.connect(self.onExperimentEnd)
-        
-        # Plotter setup
-        self.plot = Plotter(ensayo = self.ensayo, test = self.ui.experimentNameInput.text(), r = self.ui.radioCombo.currentText(), d = self.ui.distanciaInput.text(), c = self.ui.cargaInput.text())
-        plt.tight_layout()
-        self.plot.show()
-        
+        try:
+            
+            # Collect metadata
+            metadata = {
+                'operario': self.ui.operarioInput.text(),
+                'probeta': self.ui.probetaInput.text(),
+                'material': self.ui.materialInput.text(),
+                'dureza': self.ui.durezaInput.text(),
+                'tratamiento': self.ui.tratamientoInput.text(),
+                'bolilla': self.ui.bolillaCombo.currentText(),
+                'diametro': self.ui.diametroBolillaInput.text()
+            }
+            
+            # Creo nuevo ensayo si no existe aun, si existe llamo a __init__ de nuevo
+            if (isinstance(self.ensayo, Ensayo)):
+                self.ensayo.reinit(self.ui.experimentNameInput.text(), 
+                                    self.ui.distanciaInput.text(), 
+                                    self.ui.radioCombo.currentText(), 
+                                    self.ui.cargaInput.text(), 
+                                    COMPORT_CELDA, 
+                                    self.ser, 
+                                    TEST_ENV,
+                                    metadata)
+            else:
+                self.ensayo = Ensayo(self.ui.experimentNameInput.text(), 
+                                        self.ui.distanciaInput.text(), 
+                                        self.ui.radioCombo.currentText(), 
+                                        self.ui.cargaInput.text(), 
+                                        COMPORT_CELDA, 
+                                        self.ser, 
+                                        TEST_ENV,
+                                        metadata)
+            
+            self.ensayo.setSavePath(self.pathParser())
+            self.ui.pauseBtn.setEnabled(False)
+            self.ui.stopBtn.setEnabled(True)
+            self.ui.startBtn.setEnabled(False)
+            self.ui.experimentNameInput.setEnabled(False)
+            self.ui.cargaInput.setEnabled(False)
+            self.ui.radioCombo.setEnabled(False)
+            self.ui.distanciaInput.setEnabled(False)
+            self.ui.pathBrowseBtn.setEnabled(False)
+            self.ui.conectarBtn.setEnabled(False)
+            self.ui.portCombo.setEnabled(False)
+            self.ui.testBtn.setEnabled(False)
+            self.ui.groupBox_2.setEnabled(False)
+            self.ensayo.empezar()
+            self.ensayo.experimentEnd.connect(self.onExperimentEnd)
+            
+            # Plotter setup
+            self.plot = Plotter(ensayo = self.ensayo, test = self.ui.experimentNameInput.text(), r = self.ui.radioCombo.currentText(), d = self.ui.distanciaInput.text(), c = self.ui.cargaInput.text())
+            plt.tight_layout()
+            self.plot.show()
+            
 
-        # Progress bar setup
-        self.ui.progressBar.reset()
-        self.ui.progressBar.setMaximum(int(self.ensayo.getVueltasTarget()))
-        self.progress = ProgressBarUpdater(self.ensayo.progressBarQ)
-        self.progress.currentVueltas.connect(self.onVueltasChanged)
-        self.ui.progressLabel.setVisible(True)
-        self.progress.start()
+            # Progress bar setup
+            self.ui.progressBar.reset()
+            self.ui.progressBar.setMaximum(int(self.ensayo.getVueltasTarget()))
+            self.progress = ProgressBarUpdater(self.ensayo.progressBarQ)
+            self.progress.currentVueltas.connect(self.onVueltasChanged)
+            self.ui.progressLabel.setVisible(True)
+            self.progress.start()
 
-        # Estimated finish time
-        duration = datetime.timedelta(seconds=(int(self.ui.distanciaInput.text())/0.1))
-        endTime = datetime.datetime.now() + duration
-        self.ui.estimatedEndLabel.setText('Finaliza: ' + endTime.strftime('%H:%M') + " hs.")
-        self.ui.estimatedEndLabel.setVisible(True)
+            # Estimated finish time
+            duration = datetime.timedelta(seconds=(int(self.ui.distanciaInput.text())/0.1))
+            endTime = datetime.datetime.now() + duration
+            self.ui.estimatedEndLabel.setText('Finaliza: ' + endTime.strftime('%H:%M') + " hs.")
+            self.ui.estimatedEndLabel.setVisible(True)
         
+        except Exception as e:
+            logger.exception('Error comenzando experimento')
+
     def stopBtn_ClickedEvent(self):
         confirm = QtWidgets.QMessageBox.question(self,'Detener ensayo', "¿Está seguro que desea detener el experimento?",QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No)
         if confirm == QtWidgets.QMessageBox.Yes:
@@ -219,7 +239,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
     def testBtn_ClickedEvent(self):
         # print(TEST_ENV)
-        testing = Ensayo.test(self.ser, TEST_ENV)
+        testing = Ensayo.test(self.ser, TEST_ENV, logger)
         if (testing):
             # Test started
             self.ui.testBtn.setText('Detener prueba')
@@ -228,8 +248,12 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         
 
     def onVueltasChanged(self, value):
-        self.ui.progressBar.setValue(int(value))
-        self.ui.progressLabel.setText('{currVueltas} vueltas de {targetVueltas}'.format(currVueltas=int(value), targetVueltas=int(self.ensayo.getVueltasTarget())))
+        try:
+            self.ui.progressBar.setValue(int(value))
+            self.ui.progressLabel.setText('{currVueltas} vueltas de {targetVueltas}'.format(currVueltas=int(value), targetVueltas=int(self.ensayo.getVueltasTarget())))
+        
+        except Exception as e:
+            logger.exception('Error recibiendo las vueltas')
 
     def onExperimentEnd(self):
          #Rutina de limpieza para volver a empezar nuevo experimento
@@ -251,6 +275,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
         self.ui.estimatedEndLabel.setText('Ensayo finalizado')
+
         
         
         # ONLY DEBUG
@@ -287,31 +312,34 @@ class ProgressBarUpdater(QtCore.QThread):
 
 class Plotter(QtWidgets.QDialog):
     def __init__(self, r, d, c, ensayo = None, test = 'Experimento', parent=None):
-        super(Plotter, self).__init__(parent)
-        self.setWindowFlags((self.windowFlags() ^ (QtCore.Qt.WindowContextHelpButtonHint )) | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
-        self.setWindowTitle("Ensayo")
-        self.setStyleSheet("QWidget { background-color: #ffffff; }")
-        self.canvas = FigureCanvas(Figure(figsize=(10,6)))
-        self.toolbar = NavigationToolbar(self.canvas, self)
-        self.toolbar.setVisible(False)
-        self._dynamic_ax = self.canvas.figure.subplots()
-        self._dynamic_ax.grid()
-        self._dynamic_ax.set_title('Ensayo: {name} - Radio: {radio}mm - Distancia: {dist}m - Carga: {carga}N'.format(name=test, radio=r, dist=d, carga=c), pad=15)
-        self._dynamic_ax.set_xlabel('Distancia [m]', labelpad=15)
-        self._dynamic_ax.set_ylabel('Fuerza de rozamiento [kg]', labelpad=20)
-        self._dynamic_ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
-        
+        try:
+            super(Plotter, self).__init__(parent)
+            self.setWindowFlags((self.windowFlags() ^ (QtCore.Qt.WindowContextHelpButtonHint )) | QtCore.Qt.WindowMinimizeButtonHint | QtCore.Qt.WindowMaximizeButtonHint)
+            self.setWindowTitle("Ensayo")
+            self.setStyleSheet("QWidget { background-color: #ffffff; }")
+            self.canvas = FigureCanvas(Figure(figsize=(10,6)))
+            self.toolbar = NavigationToolbar(self.canvas, self)
+            self.toolbar.setVisible(False)
+            self._dynamic_ax = self.canvas.figure.subplots()
+            self._dynamic_ax.grid()
+            self._dynamic_ax.set_title('Ensayo: {name} - Radio: {radio}mm - Distancia: {dist}m - Carga: {carga}N'.format(name=test, radio=r, dist=d, carga=c), pad=15)
+            self._dynamic_ax.set_xlabel('Distancia [m]', labelpad=15)
+            self._dynamic_ax.set_ylabel('Fuerza de rozamiento [kg]', labelpad=20)
+            self._dynamic_ax.yaxis.set_major_formatter(FormatStrFormatter('%.3f'))
+            
 
-        # set the layout
-        layout = QtWidgets.QVBoxLayout()
-        layout.addWidget(self.toolbar)
-        layout.addWidget(self.canvas)
-        self.setLayout(layout)
-        self.resize(1060,600)
+            # set the layout
+            layout = QtWidgets.QVBoxLayout()
+            layout.addWidget(self.toolbar)
+            layout.addWidget(self.canvas)
+            self.setLayout(layout)
+            self.resize(1060,600)
 
-        self.ensayo = ensayo
-        self.t = Thread(target=self._update_canvas, daemon=True)
-        self.t.start()
+            self.ensayo = ensayo
+            self.t = Thread(target=self._update_canvas, daemon=True)
+            self.t.start()
+        except Exception as e:
+            logger.exception('Error inicializando graficador')
 
     def _update_canvas(self):
 
@@ -345,6 +373,7 @@ class Plotter(QtWidgets.QDialog):
         
             except queue.Empty:
                 pass
+            
     
     def closeEvent(self, event):
         if (self.t.is_alive()):
