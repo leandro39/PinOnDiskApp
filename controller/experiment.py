@@ -85,14 +85,14 @@ class Ensayo(QtCore.QObject):
             self._serialArduino.reset_output_buffer()
             
             if (self.TEST_ENV):
-                self.logger.debug('Estableciendo comuncacion con el controlador: <STAR,{radio},{vueltasTarget}\n>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget))
+                self.logger.debug('Comando: <STAR,{radio},{vueltasTarget}\n>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget))
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>\n'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             else:
-                self.logger.debug('Estableciendo comuncacion con el controlador: <STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget))
+                self.logger.debug('Comando: <STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget))
                 self._serialArduino.write(('<STAR,{radio},{vueltasTarget}>'.format(radio=self._radio, vueltasTarget=self._vueltasTarget)).encode())
             
             response = self._serialArduino.readline().decode('ascii').strip()
-            self.logger.debug('Respuesta del controlador: {response}'.format(response=response))
+            self.logger.debug('Respuesta: {response}'.format(response=response))
             
             if not (response == "0"):
                 raise Exception('Error en comunicacion con controlador')
@@ -164,6 +164,7 @@ class Ensayo(QtCore.QObject):
                     self._serialArduino.write(b'<STOP>\n')
                 else:
                     self._serialArduino.write(b'<STOP>')
+                    self.logger.debug('Comando: <STOP>')
                 answer = self._serialArduino.readline().decode('ascii').strip()
                 self.logger.debug('Respuesta: {answer}'.format(answer=answer))
                 self._lock.release()
@@ -254,11 +255,12 @@ class Ensayo(QtCore.QObject):
     def __dataWriter(self):
         try:
             # Create output file
+            self.logger.debug('Creando archivo de salida')
             self._out = open(self._path + '\\' + self._name + '.txt', 'w', newline='')
             csv_out = csv.writer(self._out, delimiter='\t')
             
             # Write metada
-
+            self.logger.debug('Escribiendo metadata del ensayo')
             localtime = time.localtime()
             today = time.strftime('%d/%m/%y', localtime)
             now = time.strftime('%H:%M:%S', localtime)
@@ -289,10 +291,10 @@ class Ensayo(QtCore.QObject):
                         distancia = self._distQ.get(timeout=1.5)
                         self.plotterQ.put((celda, distancia))
                         if(self._tyhQ.empty()):
-                            csv_out.writerow([celda, distancia,'{:10.2f}'.format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])
+                            csv_out.writerow([celda.replace(".",","), distancia.replace(".",","),'{:10.2f}'.format(timestamp).strip().replace(".",","),self.tempHumedad[0].replace(".",","), self.tempHumedad[1].replace(".",",")])
                         else:
-                            self.tempHumedad = self._tyhQ.get()
-                            csv_out.writerow([self._celdaQ.get(),self._distQ.get(),"{:10.2f}".format(timestamp).strip(),self.tempHumedad[0], self.tempHumedad[1]])
+                            self.tempHumedad = self._tyhQ.get(timeout=1.5)
+                            csv_out.writerow([celda.replace(".",","), distancia.replace(".",","),'{:10.2f}'.format(timestamp).strip().replace(".",","),self.tempHumedad[0].replace(".",","), self.tempHumedad[1].replace(".",",")])
                         self._out.flush()
                 except Exception as e:
                     if (type(e) == queue.Empty):
