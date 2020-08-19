@@ -171,6 +171,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
                                         self.ser, 
                                         TEST_ENV,
                                         metadata)
+                self.ensayo.experimentEnd.connect(self.onExperimentEnd)
             
             self.ensayo.setSavePath(self.pathParser())
             self.ui.pauseBtn.setEnabled(False)
@@ -186,7 +187,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             self.ui.testBtn.setEnabled(False)
             self.ui.groupBox_2.setEnabled(False)
             self.ensayo.empezar()
-            self.ensayo.experimentEnd.connect(self.onExperimentEnd)
+            
             
             # Plotter setup
             self.plot = Plotter(ensayo = self.ensayo, test = self.ui.experimentNameInput.text(), r = self.ui.radioCombo.currentText(), d = self.ui.distanciaInput.text(), c = self.ui.cargaInput.text())
@@ -250,17 +251,18 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
     def onVueltasChanged(self, data):
         try:
+            # print(data)
             self.ui.progressBar.setValue(int(data[0]))
             self.ui.progressLabel.setText('{currVueltas} vueltas de {targetVueltas}'.format(currVueltas=int(data[0]), targetVueltas=int(self.ensayo.getVueltasTarget())))
-            self.ui.speedLabel.setText('{velocidad} cm/s'.format(velocidad=data[1]*0.0105*self.ensayo.getRadio()))
+            self.ui.speedLabel.setText('{:10.2f} cm/s'.format(data[1]*0.0105*self.ensayo.getRadio()))
         
         except Exception as e:
             logger.exception('Error recibiendo las vueltas')
 
 
     def onExperimentEnd(self):
-        #Rutina de limpieza para volver a empezar nuevo experimento
-
+        # Rutina de limpieza para volver a empezar nuevo experimento
+        print("Rutina de limpieza")
         self.ui.pauseBtn.setEnabled(False)
         self.ui.stopBtn.setEnabled(False)
         self.ui.startBtn.setEnabled(True)
@@ -279,8 +281,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ser.reset_output_buffer()
         self.ui.estimatedEndLabel.setText('Ensayo finalizado')
         self.ui.speedLabel.setVisible(False)
-
-        
+ 
         
         # ONLY DEBUG
         # if (TEST_ENV):
@@ -351,6 +352,8 @@ class Plotter(QtWidgets.QDialog):
     def _update_canvas(self):
 
         data = self.ensayo.plotterQ.get()
+        if ("" in data):
+            data = [0,0]
         self._dynamic_ax.plot(float(data[1]), float(data[0]))
         self._dynamic_ax.figure.canvas.draw()
         line = self._dynamic_ax.get_lines()[0]
@@ -378,9 +381,11 @@ class Plotter(QtWidgets.QDialog):
                     self._dynamic_ax.set_xlim(np.min(line.get_xdata()),np.max(line.get_xdata()))
                     self._dynamic_ax.figure.canvas.draw()
         
-            except queue.Empty:
-                pass
-            
+            except Exception as e:
+                if (type(e) == queue.Empty):
+                    pass
+                else:
+                    logger.exception('Error en update_canvas')
     
     def closeEvent(self, event):
         if (self.t.is_alive()):

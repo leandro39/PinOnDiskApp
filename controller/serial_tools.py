@@ -16,7 +16,7 @@ def setup_port(ser, port):
         ser.bytesize = serial.EIGHTBITS
         ser.stopbits = serial.STOPBITS_ONE
         ser.parity = serial.PARITY_NONE
-        #ser.timeout = 0.5
+        ser.timeout = 0.5
         
     except Exception as e:
         helper.show_error("Problema inicializando puerto " + port + ".\n\n"

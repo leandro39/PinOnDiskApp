@@ -210,7 +210,7 @@ class Ensayo(QtCore.QObject):
             while True:
                 try:
                     if self._stopThreads:
-                        self.experimentEnd.emit()
+                        Ensayo.experimentEnd.emit()
                         break
                     self._dataEvent.wait(1.5)
                     if (self._dataEvent.isSet() and not self._celdaQ.empty()):
@@ -220,15 +220,18 @@ class Ensayo(QtCore.QObject):
                         else:
                             self._serialArduino.write(b'<SEND>')
                         answer = self._serialArduino.readline().decode('ascii').strip()
-                        
                         #DEVELOPING
                         if (self.TEST_ENV):
                             self._serialArduino.write(b'<SPEE>\n')
                         else:
                             self._serialArduino.write(b'<SPEE>')
+
                         answerSpeed = self._serialArduino.readline().decode('ascii').strip()
                         self._lock.release()
-                        if (answer == "-1"):
+                        # print(answer)
+                        # print(answerSpeed)
+                        if (answer == "-1" or answerSpeed == "-1"):
+                            print("Sending signal experiment end")
                             self._stopThreads = True
                             self._dataEvent.clear()
                             self.isRunning = False
