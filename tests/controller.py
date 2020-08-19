@@ -2,6 +2,7 @@ import serial
 import argparse
 import time
 from threading import Thread, Event, Lock
+import random
 
 # Argparser
 parser = argparse.ArgumentParser(description="Simula controlador de maquina de ensayos pin on disk")
@@ -12,10 +13,10 @@ ser = serial.Serial(port, timeout=None ) # Puerto al que escucha el controlador
 ser.write(('Controlador escuchando en puerto ' + port + '\n').encode())
 exitEvent = Event()
 lock = Lock()
-commands = ['SEND', 'STAR', 'CONN', 'DCON', 'TMHM', 'TEST', 'PAUS', 'STOP']
+commands = ['SEND', 'STAR', 'CONN', 'DCON', 'TMHM', 'TEST', 'PAUS', 'STOP', 'SPEE']
 radios = [5, 6, 7]
 vueltasT = 0.0
-
+velocidades = [10.0,12.5,13.2,15.3,9.6,8.6,7.9]
 #Comandos
 command = ''
 radio = 0
@@ -75,6 +76,9 @@ def main():
                 command = ''
             elif (command == 'SEND'):
                 ser.write((str(vueltasT) + '\n').encode())
+                command = ''
+            elif (command == 'SPEE'):
+                ser.write((str(random.choice(velocidades)) + '\n').encode())
                 command = ''
             vueltasT += 1.0
         

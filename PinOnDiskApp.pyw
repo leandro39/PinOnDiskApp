@@ -63,6 +63,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.labelConnected.hide()
         self.ui.progressLabel.setVisible(False)
         self.ui.estimatedEndLabel.setVisible(False)
+        self.ui.speedLabel.setVisible(False)
         self.validator = QtGui.QIntValidator()
         self.validator.setBottom(0)
         self.ui.distanciaInput.setValidator(self.validator)
@@ -94,8 +95,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ui.durezaInput.textChanged.connect(self.onTextChanged)
         self.ui.tratamientoInput.textChanged.connect(self.onTextChanged)
 
-
-    #Button events
+    # Button events
     def conectarBtn_ClickedEvent(self):
 
         if not self.isConnected:
@@ -126,7 +126,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
     def pathBrowseBtn_ClickedEvent(self):
         self.ui.pathInput.setText(str(QtWidgets.QFileDialog.getExistingDirectory(self, "Elija una carpeta en donde guardar los datos del experimento", DEFAULT_PATH)))
 
-    #Chequeo que los inputs no esten vacios antes de habilitar el ensayo
+    # Chequeo que los inputs no esten vacios antes de habilitar el ensayo
     def onTextChanged(self):
         self.ui.startBtn.setEnabled(
             bool(self.ui.experimentNameInput.text()) and 
@@ -200,6 +200,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             self.progress = ProgressBarUpdater(self.ensayo.progressBarQ)
             self.progress.currentVueltas.connect(self.onVueltasChanged)
             self.ui.progressLabel.setVisible(True)
+            self.ui.speedLabel.setVisible(True)
             self.progress.start()
 
             # Estimated finish time
@@ -247,16 +248,18 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
             self.ui.testBtn.setText('Prueba')
         
 
-    def onVueltasChanged(self, value):
+    def onVueltasChanged(self, data):
         try:
-            self.ui.progressBar.setValue(int(value))
-            self.ui.progressLabel.setText('{currVueltas} vueltas de {targetVueltas}'.format(currVueltas=int(value), targetVueltas=int(self.ensayo.getVueltasTarget())))
+            self.ui.progressBar.setValue(int(data[0]))
+            self.ui.progressLabel.setText('{currVueltas} vueltas de {targetVueltas}'.format(currVueltas=int(data[0]), targetVueltas=int(self.ensayo.getVueltasTarget())))
+            self.ui.speedLabel.setText('{velocidad} cm/s'.format(velocidad=data[1]*0.0105*self.ensayo.getRadio()))
         
         except Exception as e:
             logger.exception('Error recibiendo las vueltas')
 
+
     def onExperimentEnd(self):
-         #Rutina de limpieza para volver a empezar nuevo experimento
+        #Rutina de limpieza para volver a empezar nuevo experimento
 
         self.ui.pauseBtn.setEnabled(False)
         self.ui.stopBtn.setEnabled(False)
@@ -275,6 +278,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
         self.ser.reset_input_buffer()
         self.ser.reset_output_buffer()
         self.ui.estimatedEndLabel.setText('Ensayo finalizado')
+        self.ui.speedLabel.setVisible(False)
 
         
         
@@ -290,7 +294,7 @@ class PinOnDiskApp(QtWidgets.QMainWindow):
 
 
 class ProgressBarUpdater(QtCore.QThread):
-    currentVueltas = QtCore.pyqtSignal(float)
+    currentVueltas = QtCore.pyqtSignal(list)
     
     def __init__(self,Q, parent=None):
         super(QtCore.QThread, self).__init__()
@@ -302,12 +306,15 @@ class ProgressBarUpdater(QtCore.QThread):
             try:
                 if (self.killThread):
                     break
-                vueltas = self.vueltasQueue.get(timeout=1.5)
-                if (type(vueltas) != float):
+                data = self.vueltasQueue.get(timeout=1.5)
+                #print(data)
+                #print(type(data))
+                if (type(data) != list):
                     pass
                 else:
-                    self.currentVueltas.emit(int(vueltas))
+                    self.currentVueltas.emit(data)
             except queue.Empty:
+                print('q empty?')
                 pass
 
 class Plotter(QtWidgets.QDialog):

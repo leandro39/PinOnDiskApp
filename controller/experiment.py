@@ -123,7 +123,8 @@ class Ensayo(QtCore.QObject):
         pass
 
     def detener(self):
-        self._stopExperiment = True #Raise flag to stop experiment in a clean way
+        # Raise flag to stop experiment in a clean way
+        self._stopExperiment = True
     
     @staticmethod
     def test(port, TEST_ENV, logger):
@@ -194,7 +195,6 @@ class Ensayo(QtCore.QObject):
                             celda = celda.decode('ascii').strip()[8:13]
                         else:
                             celda = celda.decode('ascii').strip()[4:9]  #Parse poco prolijo para test
-                        # print('Celda: ' + celda)
                         self._celdaQ.put(celda)  
                         self._dataEvent.set()
         
@@ -220,7 +220,13 @@ class Ensayo(QtCore.QObject):
                         else:
                             self._serialArduino.write(b'<SEND>')
                         answer = self._serialArduino.readline().decode('ascii').strip()
-                        # print('Arduino: ' + answer)
+                        
+                        #DEVELOPING
+                        if (self.TEST_ENV):
+                            self._serialArduino.write(b'<SPEE>\n')
+                        else:
+                            self._serialArduino.write(b'<SPEE>')
+                        answerSpeed = self._serialArduino.readline().decode('ascii').strip()
                         self._lock.release()
                         if (answer == "-1"):
                             self._stopThreads = True
@@ -231,7 +237,8 @@ class Ensayo(QtCore.QObject):
                             break
                         else:
                             vueltas = float(answer)
-                            self.progressBarQ.put(vueltas)
+                            velocidad = float(answerSpeed)
+                            self.progressBarQ.put([vueltas, velocidad])
                             self._distQ.put("{:10.2f}".format(vueltas*2*pi*self._radio*0.001).strip())
                             self._dataEvent.clear()
                             self._dataReady.set()
@@ -310,7 +317,7 @@ class Ensayo(QtCore.QObject):
             self._out.flush()
             self._out.close()
 
-    
+
     def __requestTemperatureAndHumidity(self):
             timer = 60
             while True:
